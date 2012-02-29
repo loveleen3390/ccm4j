@@ -17,7 +17,7 @@ import ar.edu.unicen.ccm.bcs.MethodSignature;
 public class CostModel {
 
 	DependencyModel dep;
-	Map<String, MethodNode> methodComplexity;
+	Map<MethodSignature, MethodNode> methodComplexity;
 	
 	Map<String, ClassComplexityInfo> weightedClassComplexity;
 	
@@ -34,15 +34,15 @@ public class CostModel {
 		return dep.getTypes();
 	}
 	
-	public boolean isMethodInProject(String signature) {
+	public boolean isMethodInProject(MethodSignature signature) {
 		return this.dep.methodGraph.containsVertex(signature);
 	}
 	
 	private void analyze() {
-		this.methodComplexity = new HashMap<String, MethodNode>();
+		this.methodComplexity = new HashMap<MethodSignature, MethodNode>();
 		this.weightedClassComplexity = new HashMap<String, ClassComplexityInfo>();
 		for(MethodDeclaration md : dep.getMethods()) {
-			String signature = MethodSignature.from(md.resolveBinding());
+			MethodSignature signature = MethodSignature.from(md.resolveBinding());
 			this.methodComplexity.put(signature,new MethodNode(md, dep, this.methodComplexity));
 		}
 		
@@ -58,9 +58,9 @@ public class CostModel {
 	private ClassComplexityInfo calculateWeightedClassComplexity(TypeDeclaration t) {
 		ITypeBinding tb = t.resolveBinding();
 		
-		Map<String, MethodNode> methods = new HashMap<String, MethodNode>();
+		Map<MethodSignature, MethodNode> methods = new HashMap<MethodSignature, MethodNode>();
 		for (MethodDeclaration m : t.getMethods()) {
-			String signature = MethodSignature.from(m.resolveBinding());
+			MethodSignature signature = MethodSignature.from(m.resolveBinding());
 			methods.put(signature,  getMethodComplexity(signature));
 		}
 		return new ClassComplexityInfo(tb.getQualifiedName(),t.getFields().length , methods);
@@ -81,7 +81,7 @@ public class CostModel {
 	
 	
 	
-	public MethodNode getMethodComplexity(String signature) {
+	public MethodNode getMethodComplexity(MethodSignature signature) {
 		return methodComplexity.get(signature);
 	}
 	

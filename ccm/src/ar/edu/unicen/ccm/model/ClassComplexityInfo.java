@@ -3,13 +3,14 @@ package ar.edu.unicen.ccm.model;
 import java.util.Map;
 
 import ar.edu.unicen.ccm.bcs.MethodNode;
+import ar.edu.unicen.ccm.bcs.MethodSignature;
 
 public class ClassComplexityInfo {
 	String name;
 	int attrComplexity;
-	Map<String, MethodNode> methods;
+	Map<MethodSignature, MethodNode> methods;
 
-	public ClassComplexityInfo(String name, int attrComplexity, Map<String, MethodNode> methods) {
+	public ClassComplexityInfo(String name, int attrComplexity, Map<MethodSignature, MethodNode> methods) {
 		this.name = name;
 		this.attrComplexity = attrComplexity;
 		this.methods = methods;
@@ -23,7 +24,7 @@ public class ClassComplexityInfo {
 		return attrComplexity;
 	}
 	
-	public Map<String, MethodNode> getMethods() {
+	public Map<MethodSignature, MethodNode> getMethods() {
 		return methods;
 	}
 	

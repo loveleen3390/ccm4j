@@ -30,7 +30,7 @@ public class DependencyModel {
 	IJavaProject project;
 	Collection<TypeDeclaration> types;
 	Collection<MethodDeclaration> methods;
-	DirectedGraph<String, DefaultEdge> methodGraph;
+	DirectedGraph<MethodSignature, DefaultEdge> methodGraph;
 	DirectedGraph<String, DefaultEdge> hierarchyGraph;
 
 	public DependencyModel(IJavaProject project) throws JavaModelException {
@@ -57,8 +57,8 @@ public class DependencyModel {
 		return root;
 	}
 
-	public Set<String> getRecursivePath(String signature) {
-		CycleDetector<String, DefaultEdge> cd = new CycleDetector<String, DefaultEdge>(
+	public Set<MethodSignature> getRecursivePath(MethodSignature signature) {
+		CycleDetector<MethodSignature, DefaultEdge> cd = new CycleDetector<MethodSignature, DefaultEdge>(
 				this.methodGraph);
 		return  cd.findCyclesContainingVertex(signature);
 	}
@@ -91,11 +91,11 @@ public class DependencyModel {
 		return result;
 	}
 	
-	public Set<String> getImplementations(IMethodBinding mb) {
+	public Set<MethodSignature> getImplementations(IMethodBinding mb) {
 		String type = mb.getDeclaringClass().getQualifiedName();
-		Set<String> result = new HashSet<String>();
+		Set<MethodSignature> result = new HashSet<MethodSignature>();
 		for (String t : getAllSubtypes(type)) {
-			String signature = MethodSignature.from(t, mb.getName(),  mb.getParameterTypes());
+			MethodSignature signature = MethodSignature.from(t, mb.getName(),  mb.getParameterTypes());
 			//All subtypes that had an implementation of this method.
 			if (this.methodGraph.containsVertex(signature))
 				result.add(signature);
@@ -178,19 +178,19 @@ public class DependencyModel {
 		return hierarchy;
 	}
 
-	private DirectedGraph<String, DefaultEdge> extractMethodGraph(Collection<MethodDeclaration> methods) {
-		DirectedGraph<String, DefaultEdge> methodGraph = new DefaultDirectedGraph<String, DefaultEdge>(
+	private DirectedGraph<MethodSignature, DefaultEdge> extractMethodGraph(Collection<MethodDeclaration> methods) {
+		DirectedGraph<MethodSignature, DefaultEdge> methodGraph = new DefaultDirectedGraph<MethodSignature, DefaultEdge>(
 				DefaultEdge.class);
 		
 		// populate the method graph with all its vertex
 		for (MethodDeclaration md : methods) {
-				String signature = MethodSignature.from(md.resolveBinding());
+				MethodSignature signature = MethodSignature.from(md.resolveBinding());
 				methodGraph.addVertex(signature);
 		}
 		
 		
 		for (MethodDeclaration md : methods) {
-				String signature = MethodSignature.from(md.resolveBinding());
+				MethodSignature signature = MethodSignature.from(md.resolveBinding());
 				DependencyVisitor visitor = new DependencyVisitor(signature, methodGraph);
 				md.getBody().accept(visitor);
 		}

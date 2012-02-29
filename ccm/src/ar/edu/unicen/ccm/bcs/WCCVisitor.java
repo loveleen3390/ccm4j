@@ -22,12 +22,12 @@ import ar.edu.unicen.ccm.model.DependencyModel;
 public class WCCVisitor extends ASTVisitor {
 	public int cost;
 	DependencyModel depModel;
-	Map<String, MethodNode> methodMap;
+	Map<MethodSignature, MethodNode> methodMap;
 	MethodNode currentMethod;
 	boolean isFlatCost;
 	StringBuffer expr;
 	
-	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<String, MethodNode> methodMap, boolean isFlatCost) {
+	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<MethodSignature, MethodNode> methodMap, boolean isFlatCost) {
 		this.cost = 0;
 		this.currentMethod = currentMethod;
 		this.isFlatCost = isFlatCost;
@@ -84,7 +84,7 @@ public class WCCVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(MethodInvocation node) {
 		IMethodBinding mb = node.resolveMethodBinding();
-		String targetSignature = MethodSignature.from(mb);
+		MethodSignature targetSignature = MethodSignature.from(mb);
 		if (this.methodMap.containsKey(targetSignature)) {
 			//now check for cycles
 			MethodNode target = this.methodMap.get(targetSignature);
@@ -94,7 +94,7 @@ public class WCCVisitor extends ASTVisitor {
 				expr.append(" + " + WeightFactors.methodCallWeight());
 			}
 			else {
-				Set<String> methodsInLoop = this.depModel.getRecursivePath(this.currentMethod.getSignature());
+				Set<MethodSignature> methodsInLoop = this.depModel.getRecursivePath(this.currentMethod.getSignature());
 				if (this.isFlatCost)  {
 					if (methodsInLoop.contains(targetSignature)) {
 						expr.append(" + " + WeightFactors.methodCallWeight());

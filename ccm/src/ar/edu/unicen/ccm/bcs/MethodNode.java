@@ -10,11 +10,11 @@ import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class MethodNode {
 	//this is used as the key to lookup methods in the graph
-	String methodSignature;
+	MethodSignature methodSignature;
 	
 	//DirectedGraph<MethodNode, DefaultEdge> graph;
 	DependencyModel dependencyModel;
-	private Map<String, MethodNode> map;
+	private Map<MethodSignature, MethodNode> map;
 	
 	public MethodDeclaration md;
 	
@@ -27,7 +27,7 @@ public class MethodNode {
 
 
 	
-	public MethodNode(MethodDeclaration md, DependencyModel depModel, Map<String, MethodNode> map) {
+	public MethodNode(MethodDeclaration md, DependencyModel depModel, Map<MethodSignature, MethodNode> map) {
 		this.methodSignature = MethodSignature.from(md.resolveBinding());
 		this.md = md;
 		this.dependencyModel = depModel;
@@ -36,7 +36,7 @@ public class MethodNode {
 		this.flatCost = -1;
 	}
 
-	public String getSignature() {
+	public MethodSignature getSignature() {
 		return methodSignature;
 	}
 	/*
@@ -94,7 +94,7 @@ public class MethodNode {
 	}
 	
 	public String toString() {
-		return this.methodSignature;
+		return this.methodSignature.toString();
 	}
 	
 	
