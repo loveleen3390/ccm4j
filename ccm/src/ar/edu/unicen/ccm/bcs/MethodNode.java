@@ -41,36 +41,33 @@ public class MethodNode {
 		return this.expr;
 	}
 	public int getCost() {
-		if (this.cost == -1) {
-			IMethodBinding mb = md.resolveBinding();
-			if (mb.getDeclaringClass().isInterface() ||
-					Modifier.isAbstract(md.getModifiers()))
-				this.cost = 1; // TODO:  average over all implementations..
-			else {
-					WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, false);
-					this.md.accept(visitor);
-					this.cost = visitor.cost;
-					this.expr = visitor.getExpr();
-			}
-		}
+		if (this.cost == -1)
+			this.cost = calculateCost(false);
+
 		return this.cost;
 	}
 	
 	
 	
 	public int getFlatCost() {
-		if (this.flatCost == -1) {
-			IMethodBinding mb = md.resolveBinding();
-			if (mb.getDeclaringClass().isInterface() ||
-					Modifier.isAbstract(md.getModifiers()))
-				this.flatCost = 1; // TODO:  average over all implementations..
-			else {
-					WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, true);
-					this.md.accept(visitor);
-					this.flatCost = visitor.cost;
-			}
-		}
+		if (this.flatCost == -1)
+			this.flatCost = calculateCost(true);
+		
 		return this.flatCost;
+	}
+	
+	private int calculateCost(boolean flat) {
+		IMethodBinding mb = md.resolveBinding();
+		if (mb.getDeclaringClass().isInterface() ||
+				Modifier.isAbstract(md.getModifiers()))
+				return 1; // TODO:  average over all implementations..
+		else {
+				WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, true);
+				this.md.accept(visitor);
+				if (!flat) //Hack: this test is ugly
+					this.expr = visitor.getExpr();
+				return visitor.getCost();
+		}
 	}
 	
 	public String toString() {
