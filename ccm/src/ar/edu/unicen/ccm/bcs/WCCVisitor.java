@@ -1,15 +1,16 @@
 package ar.edu.unicen.ccm.bcs;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
@@ -26,16 +27,13 @@ public class WCCVisitor extends ASTVisitor {
 	boolean isFlatCost;
 	StringBuffer expr;
 	
-	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<String, MethodNode> methodMap, boolean isFlatCost, int initialValue) {
-		this.cost = initialValue;
+	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<String, MethodNode> methodMap, boolean isFlatCost) {
+		this.cost = 0;
 		this.currentMethod = currentMethod;
 		this.isFlatCost = isFlatCost;
 		this.depModel = depModel;
 		this.methodMap = methodMap;
 		this.expr = new StringBuffer();
-		if (initialValue != 0) {
-			expr.append("+" + initialValue);
-		}
 	}
 
 	public int getCost() {
@@ -47,70 +45,42 @@ public class WCCVisitor extends ASTVisitor {
 	}
 	
 	@Override
+	public boolean visit(MethodDeclaration node) {
+		//Sequence: only 1 for each method, at the top level.
+		cost += WeightFactors.sequenceWeight();
+		expr.append(WeightFactors.sequenceWeight() +" ");
+		return super.visit(node);
+	}
+	
+	@Override
 	public boolean visit(DoStatement node) {
-		
-		WCCVisitor childVisitor = newChildVisitor(0);
-		node.getExpression().accept(childVisitor);
-		cost += childVisitor.getCost();
-		
-		expr.append(" + (" + childVisitor.getCost() + ")");
-		
-		
-		childVisitor = newChildVisitor(WeightFactors.sequenceWeight());
-		node.getBody().accept(childVisitor);
-		expr.append(" + " + WeightFactors.loopFactor() + " * [" + childVisitor.getExpr() + "]");
-		cost += childVisitor.getCost() * WeightFactors.loopFactor();
-		return false;
+		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
 	}
 	
 	@Override
 	public boolean visit(EnhancedForStatement node) {
-		WCCVisitor childVisitor = newChildVisitor(0);
-		node.getExpression().accept(childVisitor);
-		cost += childVisitor.getCost();
-		expr.append(" + (" + childVisitor.getCost() + ")");
-				
-		
-		childVisitor = newChildVisitor(WeightFactors.sequenceWeight());
-		node.getBody().accept(childVisitor);
-		expr.append(" + " + WeightFactors.loopFactor() + " * [" + childVisitor.getExpr() + "]");
-		
-		cost += childVisitor.getCost() * WeightFactors.loopFactor();
-		return false;
+		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
 	}
 	@Override
 	public boolean visit(ForStatement node) {
-		WCCVisitor childVisitor = newChildVisitor(0);
-		node.getExpression().accept(childVisitor);
-		cost += childVisitor.getCost();
-		expr.append(" + (" + childVisitor.getCost() + ")");
-					
-		
-		childVisitor = newChildVisitor(WeightFactors.sequenceWeight());
-		node.getBody().accept(childVisitor);
-		expr.append(" + " + WeightFactors.loopFactor() + " * [" + childVisitor.getExpr() + "]");
-		
-		cost += childVisitor.getCost() * WeightFactors.loopFactor();
-		return false;
+		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
 	}
 	
 	@Override
 	public boolean visit(IfStatement node) {
-		WCCVisitor childVisitor = newChildVisitor(0);
-		node.getExpression().accept(childVisitor);
-		cost += childVisitor.getCost();
-		expr.append(" + (" + childVisitor.getCost() + ")");
-		
-		
-		childVisitor = newChildVisitor(WeightFactors.sequenceWeight());
-		node.getThenStatement().accept(childVisitor);
-		if (node.getElseStatement() != null)
-			node.getElseStatement().accept(childVisitor);
-		
-		expr.append(" + " + WeightFactors.conditionalFactor() + " * [" + childVisitor.getExpr() + "]");
-		cost += WeightFactors.conditionalFactor() * childVisitor.getCost();
-		return false;
+		return visitNestedStruct(WeightFactors.conditionalFactor(), node.getExpression(), new Statement[]{node.getThenStatement(), node.getElseStatement()});
 	}
+	@Override
+	public boolean visit(SwitchStatement node) {
+		return visitNestedStruct(WeightFactors.switchFactor(), node.getExpression(), (Statement[])node.statements().toArray());
+	}
+	
+	@Override
+	public boolean visit(WhileStatement node) {
+		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
+	}
+
+	
 	@Override
 	public boolean visit(MethodInvocation node) {
 		IMethodBinding mb = node.resolveMethodBinding();
@@ -155,41 +125,32 @@ public class WCCVisitor extends ASTVisitor {
 		return true; //for parameters
 	}
 	
-	@Override
-	public boolean visit(SwitchStatement node) {
-		WCCVisitor childVisitor = newChildVisitor(0);
-		node.getExpression().accept(childVisitor);
+	
+	
+	
+	private boolean visitNestedStruct(int factor, Expression exprStatement, Statement[] nested) {
+		WCCVisitor childVisitor = newChildVisitor();
+		exprStatement.accept(childVisitor);
 		cost += childVisitor.getCost();
 		expr.append(" + (" + childVisitor.getCost() + ")");
+				
+		
+		childVisitor = newChildVisitor();
+		for(Statement child : nested)
+			if (child != null)
+				child.accept(childVisitor);  //else branch may be null
+		int childCost = childVisitor.getCost();
+		if (childCost == 0)
+			childCost = 1; //we multiply, so nested cost can't be zero.  
+		
+		expr.append(" + " + factor + " * [" + childVisitor.getExpr() + "]");
 
-		childVisitor = newChildVisitor(WeightFactors.sequenceWeight());
-		for (Statement s : (List<Statement>)node.statements())
-			s.accept(childVisitor);
-		cost += WeightFactors.switchFactor() * childVisitor.getCost();
-		expr.append(" + " + WeightFactors.switchFactor() + " * [" + childVisitor.getExpr() + "]");
+		cost += factor * childCost;
 		return false;
 	}
 	
-	@Override
-	public boolean visit(WhileStatement node) {
-		WCCVisitor childVisitor = newChildVisitor(0);
-		node.getExpression().accept(childVisitor);
-		cost += childVisitor.getCost();
-		expr.append(" + (" + childVisitor.getCost() + ")");
-		
-		
-		
-		childVisitor = newChildVisitor(WeightFactors.sequenceWeight());
-		node.getBody().accept(childVisitor);
-		expr.append(" + " + WeightFactors.loopFactor() + " * [" + childVisitor.getExpr() + "]");
-
-		cost += WeightFactors.loopFactor()* childVisitor.getCost();
-		
-		return false;
-	}
-	
-	private WCCVisitor newChildVisitor(int initialValue) {
-		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.isFlatCost, initialValue);
+	private WCCVisitor newChildVisitor() {
+		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.isFlatCost);
 	}
 	
 }

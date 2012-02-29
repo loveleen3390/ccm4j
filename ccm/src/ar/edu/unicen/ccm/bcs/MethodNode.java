@@ -6,7 +6,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 
-import ar.edu.unicen.ccm.WeightFactors;
 import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class MethodNode {
@@ -68,8 +67,8 @@ public class MethodNode {
 					Modifier.isAbstract(md.getModifiers()))
 				this.cost = 1; // TODO:  average over all implementations..
 			else {
-					WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, false, WeightFactors.sequenceWeight());
-					this.md.getBody().accept(visitor);
+					WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, false);
+					this.md.accept(visitor);
 					this.cost = visitor.cost;
 					this.expr = visitor.getExpr();
 			}
@@ -86,8 +85,8 @@ public class MethodNode {
 					Modifier.isAbstract(md.getModifiers()))
 				this.flatCost = 1; // TODO:  average over all implementations..
 			else {
-					WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, true, 1);
-					this.md.getBody().accept(visitor);
+					WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, true);
+					this.md.accept(visitor);
 					this.flatCost = visitor.cost;
 			}
 		}
