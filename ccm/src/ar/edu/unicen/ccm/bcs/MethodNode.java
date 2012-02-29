@@ -23,10 +23,6 @@ public class MethodNode {
 	
 	String expr;
 	
-	
-
-
-	
 	public MethodNode(MethodDeclaration md, DependencyModel depModel, Map<MethodSignature, MethodNode> map) {
 		this.methodSignature = MethodSignature.from(md.resolveBinding());
 		this.md = md;
@@ -39,23 +35,7 @@ public class MethodNode {
 	public MethodSignature getSignature() {
 		return methodSignature;
 	}
-	/*
-	public void addCallTo(IMethodBinding mb) {
-		MethodNode called = new MethodNode(mb);
-		System.out.println("Evaluating call to " + called);
-		if (graph.containsVertex(called)) {
-			//Otherwise it is a library api
-			System.out.println(this + "->" + called);
-			this.graph.addEdge(this, called);
-		}
-	}
 
-	
-	public void calculateDependencies() {
-		DependencyVisitor v = new DependencyVisitor(this);
-		this.md.getBody().accept(v);
-	}
-		*/
 	
 	public String getExpr() {
 		return this.expr;
@@ -111,20 +91,6 @@ public class MethodNode {
 	public int hashCode() {
 		return this.methodSignature.hashCode();
 	}
-	
-	/*
-	private class DependencyVisitor extends ASTVisitor {
-		MethodNode node;
-		public DependencyVisitor(MethodNode node) {
-			this.node = node;
-		}
-		@Override
-		public boolean visit(MethodInvocation mi) {
-			node.addCallTo(mi.resolveMethodBinding());
-			return super.visit(mi);
-		}
-	}
-	*/
 	
 	
 }
