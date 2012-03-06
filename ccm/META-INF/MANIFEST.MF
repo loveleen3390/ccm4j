@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Ccm
+Bundle-SymbolicName: ccm; singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: ar.edu.unicen.ccm.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.core.expressions;bundle-version="3.4.300",
+ org.eclipse.jdt.core;bundle-version="3.7.1",
+ org.eclipse.core.resources;bundle-version="3.7.100"
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: lib/jgrapht-0.8.3/jgrapht-jdk1.6.jar,
+ .,
+ lib/jgrapht-0.8.3/lib/jgraph.jar
