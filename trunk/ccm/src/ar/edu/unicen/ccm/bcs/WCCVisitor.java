@@ -1,5 +1,6 @@
 package ar.edu.unicen.ccm.bcs;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -72,7 +73,12 @@ public class WCCVisitor extends ASTVisitor {
 	}
 	@Override
 	public boolean visit(SwitchStatement node) {
-		return visitNestedStruct(WeightFactors.switchFactor(), node.getExpression(), (Statement[])node.statements().toArray());
+		List<Statement> c = (List<Statement>)node.statements();
+		Statement[] childs = new Statement[c.size()];
+		for(int i=0; i<childs.length;i++)
+			childs[i] = c.get(i);
+
+		return visitNestedStruct(WeightFactors.switchFactor(), node.getExpression(), childs);
 	}
 	
 	@Override
@@ -90,6 +96,7 @@ public class WCCVisitor extends ASTVisitor {
 			MethodNode target = this.methodMap.get(targetSignature);
 			if (mb.getDeclaringClass() ==
 					this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
+				//TODO: and if it is one of its superclasses?
 				cost += WeightFactors.methodCallWeight();
 				expr.append(" + " + WeightFactors.methodCallWeight());
 			}
@@ -130,7 +137,9 @@ public class WCCVisitor extends ASTVisitor {
 	
 	private boolean visitNestedStruct(int factor, Expression exprStatement, Statement[] nested) {
 		WCCVisitor childVisitor = newChildVisitor();
-		exprStatement.accept(childVisitor);
+		if (exprStatement != null)
+			exprStatement.accept(childVisitor); // for expressions might be null
+		
 		cost += childVisitor.getCost();
 		expr.append(" + (" + childVisitor.getCost() + ")");
 				
