@@ -170,10 +170,11 @@ public class DependencyModel {
 		// a parent class in this project.
 		for (TypeDeclaration t : types) {
 			ITypeBinding tb = t.resolveBinding();
-			if (hierarchy.containsVertex(tb.getSuperclass().getQualifiedName())) {
-				hierarchy.addEdge(tb.getSuperclass().getQualifiedName(),
-						tb.getQualifiedName());
-			}
+			if (tb.getSuperclass() != null)
+				if (hierarchy.containsVertex(tb.getSuperclass().getQualifiedName())) {
+					hierarchy.addEdge(tb.getSuperclass().getQualifiedName(),
+							tb.getQualifiedName());
+				}
 		}
 		return hierarchy;
 	}
@@ -192,7 +193,8 @@ public class DependencyModel {
 		for (MethodDeclaration md : methods) {
 				MethodSignature signature = MethodSignature.from(md.resolveBinding());
 				DependencyVisitor visitor = new DependencyVisitor(signature, methodGraph);
-				md.getBody().accept(visitor);
+				if (md.getBody() != null) //TODO: abstract methods
+					md.getBody().accept(visitor);
 		}
 		return methodGraph;
 	}
