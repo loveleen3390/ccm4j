@@ -22,6 +22,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		store.setDefault(PreferenceConstants.P_LOOP_FACTOR, 3);
 		store.setDefault(PreferenceConstants.P_METHOD_CALL_WEIGHT, 2);
 		store.setDefault(PreferenceConstants.P_RECURSIVE_CALL_WEIGHT, 5);
+		store.setDefault(PreferenceConstants.P_SUPER_CALL_WEIGHT, 2);
 		store.setDefault(PreferenceConstants.P_SEQUENCE_WEIGHT, 1);
 		store.setDefault(PreferenceConstants.P_SWITCH_FACTOR, 3);
 				
