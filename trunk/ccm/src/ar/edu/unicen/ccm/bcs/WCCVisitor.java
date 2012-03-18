@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
@@ -86,10 +87,46 @@ public class WCCVisitor extends ASTVisitor {
 		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
 	}
 
+	@Override
+	public boolean visit(ClassInstanceCreation node) {
+		IMethodBinding mb = node.resolveConstructorBinding();
+		return doVisitMethodInvocation(mb);
+	}
 	
 	@Override
 	public boolean visit(MethodInvocation node) {
 		IMethodBinding mb = node.resolveMethodBinding();
+		return doVisitMethodInvocation(mb);
+	}
+		
+	
+	
+	
+	
+	private boolean visitNestedStruct(int factor, Expression exprStatement, Statement[] nested) {
+		WCCVisitor childVisitor = newChildVisitor();
+		if (exprStatement != null)
+			exprStatement.accept(childVisitor); // for expressions might be null
+		
+		cost += childVisitor.getCost();
+		expr.append(" + (" + childVisitor.getCost() + ")");
+				
+		
+		childVisitor = newChildVisitor();
+		for(Statement child : nested)
+			if (child != null)
+				child.accept(childVisitor);  //else branch may be null
+		int childCost = childVisitor.getCost();
+		if (childCost == 0)
+			childCost = 1; //we multiply, so nested cost can't be zero.  
+		
+		expr.append(" + " + factor + " * [" + childVisitor.getExpr() + "]");
+
+		cost += factor * childCost;
+		return false;
+	}
+	
+	public boolean doVisitMethodInvocation(IMethodBinding mb) {
 		MethodSignature targetSignature = MethodSignature.from(mb);
 		if (this.methodMap.containsKey(targetSignature)) {
 			//now check for cycles
@@ -131,32 +168,7 @@ public class WCCVisitor extends ASTVisitor {
 		//otherwise is a method defined elsewere, not in this project.
 		return true; //for parameters
 	}
-	
-	
-	
-	
-	private boolean visitNestedStruct(int factor, Expression exprStatement, Statement[] nested) {
-		WCCVisitor childVisitor = newChildVisitor();
-		if (exprStatement != null)
-			exprStatement.accept(childVisitor); // for expressions might be null
-		
-		cost += childVisitor.getCost();
-		expr.append(" + (" + childVisitor.getCost() + ")");
-				
-		
-		childVisitor = newChildVisitor();
-		for(Statement child : nested)
-			if (child != null)
-				child.accept(childVisitor);  //else branch may be null
-		int childCost = childVisitor.getCost();
-		if (childCost == 0)
-			childCost = 1; //we multiply, so nested cost can't be zero.  
-		
-		expr.append(" + " + factor + " * [" + childVisitor.getExpr() + "]");
 
-		cost += factor * childCost;
-		return false;
-	}
 	
 	private WCCVisitor newChildVisitor() {
 		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.isFlatCost);
