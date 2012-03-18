@@ -136,21 +136,26 @@ public class DependencyModel {
 														// on
 					CompilationUnit cu = (CompilationUnit) parser
 							.createAST(null /* IProgressMonitor */); // parse
-					for (AbstractTypeDeclaration t : (List<AbstractTypeDeclaration>) cu
-							.types()) {
-						// TODO: recursion: add types recursive, type inside type inside type
-						if (t.getNodeType() == AbstractTypeDeclaration.TYPE_DECLARATION) {
-							TypeDeclaration td = (TypeDeclaration) t;
-							types.add((TypeDeclaration) t);
-							for (TypeDeclaration childType : td.getTypes())
-								types.add(childType);
-						}
-					}
+					extractTypesFromCU(cu, types);
 				}
 		}
 		return types;
 	}
 
+	private void extractTypesFromCU(CompilationUnit cu, Collection<TypeDeclaration> types) {
+		for (AbstractTypeDeclaration t : (List<AbstractTypeDeclaration>) cu.types()) {
+			extractTypesRecursive(t, types);
+		}
+	}
+	private void extractTypesRecursive(AbstractTypeDeclaration t, Collection<TypeDeclaration> types) {
+		if (t.getNodeType() == AbstractTypeDeclaration.TYPE_DECLARATION) {
+			TypeDeclaration td = (TypeDeclaration) t;
+			types.add((TypeDeclaration) t);
+			for (TypeDeclaration childType : td.getTypes())
+				extractTypesRecursive(childType, types);
+		}
+	}
+	
 	private DirectedGraph<String, DefaultEdge> extractHierarchyGraph(
 			Collection<TypeDeclaration> td) {
 		DirectedGraph<String, DefaultEdge> hierarchy = new DefaultDirectedGraph<String, DefaultEdge>(
