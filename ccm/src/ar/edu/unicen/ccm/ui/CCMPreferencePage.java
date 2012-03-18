@@ -49,6 +49,10 @@ public class CCMPreferencePage
 				PreferenceConstants.P_RECURSIVE_CALL_WEIGHT, 
 				"Recursive call weight", 
 				getFieldEditorParent()));
+		addField(new IntegerFieldEditor(
+				PreferenceConstants.P_SUPER_CALL_WEIGHT, 
+				"Calls to superclass methods", 
+				getFieldEditorParent()));
 	}
 
 	/* (non-Javadoc)

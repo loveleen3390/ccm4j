@@ -21,6 +21,9 @@ public class WeightFactors {
 	public static int recursiveCalllWeight() {
 		return get(PreferenceConstants.P_RECURSIVE_CALL_WEIGHT);
 	}
+	public static int superCallWeight() {
+		return get(PreferenceConstants.P_SUPER_CALL_WEIGHT);
+	}
 	public static int sequenceWeight() {
 		return get(PreferenceConstants.P_SEQUENCE_WEIGHT);
 	}
@@ -28,6 +31,8 @@ public class WeightFactors {
 	private static int get(String key) {
 		return Activator.getDefault().getPreferenceStore().getInt(key);
 	}
+	
+	
 	
 
 }

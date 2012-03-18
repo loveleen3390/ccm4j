@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
@@ -15,6 +16,8 @@ import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
@@ -87,6 +90,31 @@ public class WCCVisitor extends ASTVisitor {
 		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
 	}
 
+	
+	@Override
+	public boolean visit(ConstructorInvocation node) {
+		//these are  this() calls, as they are local calls its only cost
+		// the methodCallWeight without summing the constructor cost itself.
+		cost += WeightFactors.methodCallWeight();
+		expr.append(" + " + WeightFactors.methodCallWeight());
+		return super.visit(node);
+	}
+	
+	@Override
+	public boolean visit(SuperConstructorInvocation node) {
+		//TODO: should we count the super cost?
+		cost += WeightFactors.superCallWeight();
+		expr.append(" + " + WeightFactors.superCallWeight());
+		return super.visit(node);
+	}
+	
+	public boolean visit(SuperMethodInvocation node) {
+		//TODO: should we count the super cost?
+		cost += WeightFactors.superCallWeight();
+		expr.append(" + " + WeightFactors.superCallWeight());
+		return super.visit(node);
+	}
+	
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		IMethodBinding mb = node.resolveConstructorBinding();
