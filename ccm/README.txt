@@ -4,10 +4,7 @@ OJO:
 			se tienen en cuenta la jerarquia
 			
 			
-Las subclases se multiplican,  si el costo de una Subclase es 0 (no attributos ni methodos, raro)
-		toda esa rama se anula
-		
-		
+	
 Falta haacer el promedio para los metodos abstractos.
 
 Falta considerar costo adicional de try - catch ?

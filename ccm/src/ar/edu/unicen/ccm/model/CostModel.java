@@ -69,13 +69,19 @@ public class CostModel {
 	
 	public int hierarchyCostOf(String baseClass) {
 		Set<String> subtypes = this.dep.getDirectSubtypes(baseClass);
+		//If a class has "0" complexity, its hierarchy weight would be "0" too because
+		//we multiply it. I think that's not the intended result, so here we force it to
+		//1 on those cases.
+		int baseWeight = Math.max(
+				getClassComplexityInfo(baseClass).getWeightedClassComplexity(), 
+				1);
 		if (subtypes.isEmpty())
-			return getClassComplexityInfo(baseClass).getWeightedClassComplexity();
+			return baseWeight;
 		else {
 			int childCost = 0;
 			for (String subType : subtypes)
 				childCost += hierarchyCostOf(subType);
-			return getClassComplexityInfo(baseClass).getWeightedClassComplexity() * childCost;
+			return baseWeight * childCost;
 		}
 	}
 	
