@@ -32,9 +32,12 @@ public class DependencyModel {
 	Collection<MethodDeclaration> methods;
 	DirectedGraph<MethodSignature, DefaultEdge> methodGraph;
 	DirectedGraph<String, DefaultEdge> hierarchyGraph;
+	
+	Set<String> interfaces; 
 
 	public DependencyModel(IJavaProject project) throws JavaModelException {
 		this.project = project;
+		
 		buildModel();
 	}
 	
@@ -48,10 +51,18 @@ public class DependencyModel {
 	public Collection<String> getRootClasses() {
 		List<String> root = new LinkedList<String>();
 		for (String t : hierarchyGraph.vertexSet()) {
-			if (hierarchyGraph.inDegreeOf(t) == 0) {
-				// TODO: que no sea interfaz..
-				// it is not subclass of any class in this project
-				root.add(t);
+			if (!interfaces.contains(t)) { //is a class, not an interface 
+				Set<DefaultEdge> incoming = hierarchyGraph.incomingEdgesOf(t);
+				boolean isroot = true;
+				for (DefaultEdge e : incoming) {
+					String parent = hierarchyGraph.getEdgeSource(e);
+					if (!interfaces.contains(parent)) { //type have a superclass
+						isroot = false;
+						break;
+					}
+				}
+				if (isroot)
+					root.add(t);
 			}
 		}
 		return root;
@@ -108,6 +119,7 @@ public class DependencyModel {
 	private void buildModel() throws JavaModelException {
 		this.types = extractTypes(project);
 		this.methods = extractMethods(types);
+		this.interfaces = new HashSet<String>();
 		this.hierarchyGraph = extractHierarchyGraph(types);
 		this.methodGraph = extractMethodGraph(methods);
 	}
@@ -163,16 +175,14 @@ public class DependencyModel {
 
 		// create the hierarchy vertex
 		for (TypeDeclaration t : types) {
-			if (!t.isInterface()) {// TODO: agregar las interfaces
-				hierarchy.addVertex(t.resolveBinding().getQualifiedName());
-			}
+			hierarchy.addVertex(t.resolveBinding().getQualifiedName());
+			if (t.isInterface()) 
+				interfaces.add(t.resolveBinding().getQualifiedName());
 		}
-		// create the links TODO: add interfaces
+
 		// TODO: interfaces not in this project ALSO must be addedd.. to find references
 		// TODO: abstract classes not in this project ALSO must be added ..
 		// to find implementations of a method.
-		// when looking for roots, one must search the ones that don't have
-		// a parent class in this project.
 		for (TypeDeclaration t : types) {
 			ITypeBinding tb = t.resolveBinding();
 			if (tb.getSuperclass() != null)
@@ -180,6 +190,12 @@ public class DependencyModel {
 					hierarchy.addEdge(tb.getSuperclass().getQualifiedName(),
 							tb.getQualifiedName());
 				}
+			for (ITypeBinding interfaz :  tb.getInterfaces()) {
+				if (hierarchy.containsVertex(interfaz.getQualifiedName())) {
+					hierarchy.addEdge(interfaz.getQualifiedName(),
+							tb.getQualifiedName());
+				}
+			}
 		}
 		return hierarchy;
 	}
@@ -194,13 +210,14 @@ public class DependencyModel {
 				methodGraph.addVertex(signature);
 		}
 		
-		
+		/*
 		for (MethodDeclaration md : methods) {
 				MethodSignature signature = MethodSignature.from(md.resolveBinding());
 				DependencyVisitor visitor = new DependencyVisitor(signature, methodGraph);
 				if (md.getBody() != null) //TODO: abstract methods
 					md.getBody().accept(visitor);
 		}
+		*/
 		return methodGraph;
 	}
 
