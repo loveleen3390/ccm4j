@@ -1,6 +1,7 @@
 package ar.edu.unicen.ccm.bcs;
 
 import java.util.Map;
+import java.util.Stack;
 
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -23,6 +24,8 @@ public class MethodNode {
 	
 	String expr;
 	
+	boolean recursive;
+	
 	public MethodNode(MethodDeclaration md, DependencyModel depModel, Map<MethodSignature, MethodNode> map) {
 		this.methodSignature = MethodSignature.from(md.resolveBinding());
 		this.md = md;
@@ -30,6 +33,7 @@ public class MethodNode {
 		this.map = map;
 		this.cost = -1; 
 		this.flatCost = -1;
+		this.recursive = false;
 	}
 
 	public MethodSignature getSignature() {
@@ -40,32 +44,36 @@ public class MethodNode {
 	public String getExpr() {
 		return this.expr;
 	}
+	
 	public int getCost() {
-		if (this.cost == -1)
-			this.cost = calculateCost(false);
-
-		return this.cost;
+		Stack<MethodSignature> stack = new Stack<MethodSignature>();
+		stack.add(this.methodSignature);
+		return getCost(stack);
 	}
-	
-	
-	
-	public int getFlatCost() {
-		if (this.flatCost == -1)
-			this.flatCost = calculateCost(true);
+	public int getCost(Stack<MethodSignature> callStack) {
 		
-		return this.flatCost;
+		if (this.cost != -1) {
+			return this.cost;
+		} else {
+			int calculatedCost = calculateCost(callStack);
+			if (!this.recursive)  //recursive methods aren't memorized, explain why latter
+				this.cost = calculatedCost;
+			return calculatedCost;
+		}
 	}
 	
-	private int calculateCost(boolean flat) {
+	
+	
+	private int calculateCost(Stack<MethodSignature> callStack) {
 		IMethodBinding mb = md.resolveBinding();
 		if (mb.getDeclaringClass().isInterface() ||
 				Modifier.isAbstract(md.getModifiers()))
-				return 1; // TODO:  average over all implementations..
+				return 1; // NOTE: this will never be called, we handle this case in WCCVisitor
 		else {
-				WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, true);
+				WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, callStack);
 				this.md.accept(visitor);
-				if (!flat) //Hack: this test is ugly
-					this.expr = visitor.getExpr();
+				
+				this.expr = visitor.getExpr();
 				return visitor.getCost();
 		}
 	}
@@ -89,5 +97,8 @@ public class MethodNode {
 		return this.methodSignature.hashCode();
 	}
 	
+	public void setRecursive() {
+		this.recursive = true;
+	}
 	
 }

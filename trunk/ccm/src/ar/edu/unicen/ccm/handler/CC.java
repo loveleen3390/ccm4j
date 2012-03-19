@@ -42,7 +42,6 @@ public class CC extends AbstractHandler {
 	}
 
 	private void analyzeJavaProject(final IJavaProject project) throws Exception {
-
 		Job job = new Job("Calculating code complexity") {
 
 			@Override
@@ -85,7 +84,7 @@ public class CC extends AbstractHandler {
 					csv.save();
 
 				} catch (Exception e ) {
-					; //TODO
+					e.printStackTrace();
 				} finally {
 					monitor.done();
 				}
@@ -95,7 +94,6 @@ public class CC extends AbstractHandler {
 		};
 		job.setUser(true);
 		job.schedule();
-
 	}
 
 

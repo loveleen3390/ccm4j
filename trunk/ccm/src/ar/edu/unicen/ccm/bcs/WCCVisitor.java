@@ -3,8 +3,10 @@ package ar.edu.unicen.ccm.bcs;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.DoStatement;
@@ -15,11 +17,13 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 
 import ar.edu.unicen.ccm.WeightFactors;
 import ar.edu.unicen.ccm.model.DependencyModel;
@@ -29,16 +33,16 @@ public class WCCVisitor extends ASTVisitor {
 	DependencyModel depModel;
 	Map<MethodSignature, MethodNode> methodMap;
 	MethodNode currentMethod;
-	boolean isFlatCost;
 	StringBuffer expr;
+	Stack<MethodSignature> stack;
 	
-	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<MethodSignature, MethodNode> methodMap, boolean isFlatCost) {
+	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<MethodSignature, MethodNode> methodMap,  Stack<MethodSignature> stack) {
 		this.cost = 0;
 		this.currentMethod = currentMethod;
-		this.isFlatCost = isFlatCost;
 		this.depModel = depModel;
 		this.methodMap = methodMap;
 		this.expr = new StringBuffer();
+		this.stack = stack;
 	}
 
 	public int getCost() {
@@ -128,8 +132,7 @@ public class WCCVisitor extends ASTVisitor {
 	}
 		
 	
-	
-	
+		
 	
 	private boolean visitNestedStruct(int factor, Expression exprStatement, Statement[] nested) {
 		WCCVisitor childVisitor = newChildVisitor();
@@ -153,53 +156,84 @@ public class WCCVisitor extends ASTVisitor {
 		cost += factor * childCost;
 		return false;
 	}
-	
-	public boolean doVisitMethodInvocation(IMethodBinding mb) {
-		MethodSignature targetSignature = MethodSignature.from(mb);
-		if (this.methodMap.containsKey(targetSignature)) {
-			//now check for cycles
-			MethodNode target = this.methodMap.get(targetSignature);
-			if (mb.getDeclaringClass() ==
-					this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
-				//TODO: and if it is one of its superclasses?
-				cost += WeightFactors.methodCallWeight();
-				expr.append(" + " + WeightFactors.methodCallWeight());
-			}
-			else {
-				Set<MethodSignature> methodsInLoop = this.depModel.getRecursivePath(this.currentMethod.getSignature());
-				if (this.isFlatCost)  {
-					if (methodsInLoop.contains(targetSignature)) {
-						expr.append(" + " + WeightFactors.methodCallWeight());
-						cost += WeightFactors.methodCallWeight();  //do not enter the loop
-					}
-					else {	
-						
-						int callCost = target.getCost();
-						cost += WeightFactors.methodCallWeight() + callCost;
-						expr.append(" + " + WeightFactors.methodCallWeight() + " + [" + callCost + "]");
-					}
-				} else {
-					if (methodsInLoop.contains(targetSignature)) {
-						int callCost = target.getFlatCost();
-						cost += WeightFactors.recursiveCalllWeight() + callCost;
-						expr.append(" + " + WeightFactors.recursiveCalllWeight() + " + [" + callCost + "]");
-					}
-					else { 
-						int callCost = target.getCost();
-						cost += WeightFactors.methodCallWeight() + callCost;
-						expr.append(" + " + WeightFactors.methodCallWeight() +" + [" + callCost + "]");
-					}
-				}
-			
-			}
-		}
-		//otherwise is a method defined elsewere, not in this project.
-		return true; //for parameters
-	}
 
 	
+	public boolean doVisitMethodInvocation(IMethodBinding mb) {
+		if (mb.getDeclaringClass() ==
+				this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
+			//local calls are not counted
+			return true;
+		} else {
+
+			MethodSignature targetSignature = MethodSignature.from(mb);
+			if (isUserDefined(targetSignature)) {
+				if (stack.contains(targetSignature)) {
+					for (int index = stack.indexOf(targetSignature); index < stack.size(); index++) {
+						MethodSignature m = stack.get(index);
+						MethodNode target = this.methodMap.get(m);
+						target.setRecursive();
+					}
+
+					expr.append("+" +WeightFactors.recursiveCalllWeight());
+					cost += WeightFactors.recursiveCalllWeight();
+				} else {
+					stack.add(targetSignature);
+					if (Modifier.isAbstract(mb.getModifiers())) {
+						expr.append(" + " + WeightFactors.methodCallWeight());
+						int averageCost = averageImplementationCost(mb);
+						cost += WeightFactors.methodCallWeight() + averageCost;
+					} else {
+						expr.append(" +" + WeightFactors.methodCallWeight());
+						int methodCost = methodCost(targetSignature);
+						cost += WeightFactors.methodCallWeight() + methodCost;
+					}
+					MethodSignature pop = this.stack.pop();
+					if (targetSignature != pop)
+						System.out.println("Error!: ms: " + targetSignature + "  pop:" + pop);
+
+				}
+			}
+		}
+		return true;
+	}
+	
+	private boolean isUserDefined(MethodSignature ms) {
+		return this.methodMap.containsKey(ms);
+	}
+			
+	
+	private int averageImplementationCost(IMethodBinding mb) {
+		Set<MethodSignature> implementations = this.depModel.getImplementations(mb);
+		if (implementations.isEmpty()) {
+			System.out.println("Warnning " + MethodSignature.from(mb) + " doesn't have implementations");
+			return 0; //patological case
+		}
+		else {
+			int total = 0;
+			expr.append("+ {");
+			for(MethodSignature impl : implementations) {
+				stack.add(impl);
+				total+= methodCost(impl);
+				MethodSignature pop = this.stack.pop();
+				if (impl != pop)
+					System.out.println("Error!: ms: " + impl + "  pop:" + pop);
+
+			}
+			expr.append("}/");
+			expr.append(implementations.size());
+			return total / implementations.size();
+		}
+	}
+	
+	private int methodCost(MethodSignature targetSignature) {
+		MethodNode target = this.methodMap.get(targetSignature);
+		int callCost = target.getCost(this.stack);
+		expr.append(" + [" + callCost + "]");
+		return  callCost;
+	}
+		
 	private WCCVisitor newChildVisitor() {
-		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.isFlatCost);
+		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.stack);
 	}
 	
 }
