@@ -8,6 +8,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
@@ -64,9 +65,8 @@ public class CC extends AbstractHandler {
 
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
 							"Class", "# methods", "# attributes",  "Weight");
-					for(TypeDeclaration t : cm.getTypes()) {
-						ITypeBinding tb = t.resolveBinding();
-						ClassComplexityInfo info = cm.getClassComplexityInfo(tb.getQualifiedName());
+					for(IType t : cm.getTypes()) {
+						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
 						csv.addRow(info.getName(), info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity());
 						monitor.worked(1);
 					}
