@@ -219,11 +219,18 @@ public class WCCVisitor extends ASTVisitor {
 			int total = 0;
 			expr.append("+ {");
 			for(MethodSignature impl : implementations) {
+				if (stack.contains(impl)) {
+					// recursive call to an abstract method  (composite-like pattern)
+					// we consider only the cost of recursion factor
+					expr.append(" +" + WeightFactors.recursiveCalllWeight());
+					total += WeightFactors.recursiveCalllWeight();
+				} else {
 				stack.add(impl);
 				total+= methodCost(impl);
 				MethodSignature pop = this.stack.pop();
 				if (impl != pop)
 					System.out.println("Error!: ms: " + impl + "  pop:" + pop);
+				}
 
 			}
 			expr.append("}/");
