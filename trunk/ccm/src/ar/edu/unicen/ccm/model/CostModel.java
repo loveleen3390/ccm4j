@@ -2,17 +2,24 @@ package ar.edu.unicen.ccm.model;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import ar.edu.unicen.ccm.bcs.MethodNode;
 import ar.edu.unicen.ccm.bcs.MethodSignature;
+import ar.edu.unicen.ccm.utils.Utils;
 
 public class CostModel {
 
@@ -30,15 +37,15 @@ public class CostModel {
 		return dep;
 	}
 	
-	public Collection<TypeDeclaration> getTypes() {
+	public Collection<IType> getTypes() throws JavaModelException {
 		return dep.getTypes();
 	}
 	
 	public boolean isMethodInProject(MethodSignature signature) {
-		return this.dep.methodGraph.containsVertex(signature);
+		return this.dep.methods.containsKey(signature);
 	}
 	
-	private void analyze() {
+	private void analyze() throws JavaModelException {
 		this.methodComplexity = new HashMap<MethodSignature, MethodNode>();
 		this.weightedClassComplexity = new HashMap<String, ClassComplexityInfo>();
 		for(MethodDeclaration md : dep.getMethods()) {
@@ -46,8 +53,8 @@ public class CostModel {
 			this.methodComplexity.put(signature,new MethodNode(md, dep, this.methodComplexity));
 		}
 		
-		for (TypeDeclaration t : getTypes()) {
-			this.weightedClassComplexity.put(t.resolveBinding().getQualifiedName(),
+		for (IType t : getTypes()) {
+			this.weightedClassComplexity.put(t.getFullyQualifiedName('.'),
 					calculateWeightedClassComplexity(t));
 		}
 	}
@@ -55,20 +62,30 @@ public class CostModel {
 	public ClassComplexityInfo getClassComplexityInfo(String type) {
 		return this.weightedClassComplexity.get(type);
 	}
-	private ClassComplexityInfo calculateWeightedClassComplexity(TypeDeclaration t) {
-		ITypeBinding tb = t.resolveBinding();
+	
+	private ClassComplexityInfo calculateWeightedClassComplexity(IType typeHandle) throws JavaModelException {
+		
+		TypeDeclaration typeDecl = Utils.findType(typeHandle);
 		
 		Map<MethodSignature, MethodNode> methods = new HashMap<MethodSignature, MethodNode>();
-		for (MethodDeclaration m : t.getMethods()) {
+		for (MethodDeclaration m : typeDecl.getMethods()) {
 			MethodSignature signature = MethodSignature.from(m.resolveBinding());
 			methods.put(signature,  getMethodComplexity(signature));
 		}
-		return new ClassComplexityInfo(tb.getQualifiedName(),t.getFields().length , methods);
+		return new ClassComplexityInfo(typeHandle.getFullyQualifiedName('.'),typeHandle.getFields().length , methods);
 		
 	}
 	
+	//TODO: count nesting level and total # of classes
 	public int hierarchyCostOf(String baseClass) {
-		Set<String> subtypes = this.dep.getDirectSubtypes(baseClass);
+		Set<String> subtypes;
+		try {
+			subtypes = this.dep.getDirectSubtypes(baseClass);
+		} catch (JavaModelException e) {
+			subtypes = new HashSet<String>();
+			e.printStackTrace();
+			//TODO: warn somehow
+		}
 		//If a class has "0" complexity, its hierarchy weight would be "0" too because
 		//we multiply it. I think that's not the intended result, so here we force it to
 		//1 on those cases.
@@ -85,12 +102,8 @@ public class CostModel {
 		}
 	}
 	
-	
-	
 	public MethodNode getMethodComplexity(MethodSignature signature) {
 		return methodComplexity.get(signature);
 	}
-	
-	
-	
+		
 }

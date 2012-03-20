@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
@@ -203,7 +204,13 @@ public class WCCVisitor extends ASTVisitor {
 			
 	
 	private int averageImplementationCost(IMethodBinding mb) {
-		Set<MethodSignature> implementations = this.depModel.getImplementations(mb);
+		Set<MethodSignature> implementations;
+		try {
+			implementations = this.depModel.getImplementations(mb);
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+			return 0;  //TODO: emit a warning somehow
+		}
 		if (implementations.isEmpty()) {
 			System.out.println("Warnning " + MethodSignature.from(mb) + " doesn't have implementations");
 			return 0; //patological case
@@ -231,6 +238,7 @@ public class WCCVisitor extends ASTVisitor {
 		expr.append(" + [" + callCost + "]");
 		return  callCost;
 	}
+	
 		
 	private WCCVisitor newChildVisitor() {
 		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.stack);

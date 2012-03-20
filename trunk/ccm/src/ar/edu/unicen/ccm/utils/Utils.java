@@ -1,6 +1,22 @@
 package ar.edu.unicen.ccm.utils;
 
 import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.compiler.CharOperation;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.internal.core.SourceType;
+
+
 
 
 public class Utils {
@@ -21,4 +37,54 @@ public class Utils {
 			result[i] = f.map(array[i]);
 		return result;
 	}
+	
+	/* TODO: It won't work with anonymous classes.  
+	 * TODO: really inneficient, we are parsing the file again..
+	 */
+	public static TypeDeclaration findType(IType typeHandle) {
+		IJavaElement parent = typeHandle.getParent();
+		ASTParser parser = ASTParser.newParser(AST.JLS3);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(typeHandle.getCompilationUnit()); // set source
+		parser.setResolveBindings(true); // we need bindings later
+											// on
+		CompilationUnit cu = (CompilationUnit) parser
+				.createAST(null); // parse
+		return findTypeInCU(cu, typeHandle);
+    }
+
+	 
+	private static TypeDeclaration findTypeInCU(CompilationUnit cu, IType typeHandle) {
+		Collection<TypeDeclaration> typesInCu = new LinkedList<TypeDeclaration>();
+		extractTypesFromCU(cu, typesInCu);
+		//TODO: buscar tambien en las clases anonimas..
+  	    int occurenceCount = ((SourceType)typeHandle).occurrenceCount;
+  	    boolean searchAnonymous =  typeHandle.getElementName().length() == 0;
+
+		for (TypeDeclaration t : typesInCu) {
+			String qn = t.resolveBinding().getQualifiedName();
+			System.out.println("FQ: " +qn + " Searching for " + typeHandle.getFullyQualifiedName('.'));
+			if (qn.equals(typeHandle.getFullyQualifiedName('.')))
+				return	t;
+		}
+		return null;
+	}
+	
+
+	private static void extractTypesFromCU(CompilationUnit cu, Collection<TypeDeclaration> types) {
+		for (AbstractTypeDeclaration t : (List<AbstractTypeDeclaration>) cu.types()) {
+			extractTypesRecursive(t, types);
+		}
+	}
+	private static void extractTypesRecursive(AbstractTypeDeclaration t, Collection<TypeDeclaration> types) {
+		if (t.getNodeType() == AbstractTypeDeclaration.TYPE_DECLARATION) {
+			TypeDeclaration td = (TypeDeclaration) t;
+			System.out.println("extract:" + td.resolveBinding().getQualifiedName());
+			types.add(td);
+			for (TypeDeclaration childType : td.getTypes())
+				extractTypesRecursive(childType, types);
+		}
+	}
+	
+	
 }
