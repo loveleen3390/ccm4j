@@ -28,10 +28,15 @@ public class WeightFactors {
 		return get(PreferenceConstants.P_SEQUENCE_WEIGHT);
 	}
 	
+	public static int tryFactor() {
+		return get(PreferenceConstants.P_TRY_FACTOR);
+	}
+	
 	private static int get(String key) {
 		return Activator.getDefault().getPreferenceStore().getInt(key);
 	}
 	
+
 	
 	
 

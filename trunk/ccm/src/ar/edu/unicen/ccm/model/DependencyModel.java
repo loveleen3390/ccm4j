@@ -141,6 +141,7 @@ public class DependencyModel {
 	private Map<MethodSignature, MethodDeclaration> extractMethods(Collection<TypeDeclaration> types) {
 		Map<MethodSignature,MethodDeclaration> result = new HashMap<MethodSignature,MethodDeclaration>();
 		for (TypeDeclaration t : types) {
+			
 			for (MethodDeclaration md : t.getMethods()) {
 				result.put(MethodSignature.from(md.resolveBinding()), md);
 			}
