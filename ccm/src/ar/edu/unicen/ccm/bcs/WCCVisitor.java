@@ -6,8 +6,10 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
+import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.DoStatement;
@@ -23,6 +25,7 @@ import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 
@@ -61,24 +64,25 @@ public class WCCVisitor extends ASTVisitor {
 		expr.append(WeightFactors.sequenceWeight() +" ");
 		return super.visit(node);
 	}
+
 	
 	@Override
 	public boolean visit(DoStatement node) {
-		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
+		return visitNestedStruct(WeightFactors.loopFactor(), new Expression[]{node.getExpression()}, new Statement[]{node.getBody()});
 	}
 	
 	@Override
 	public boolean visit(EnhancedForStatement node) {
-		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
+		return visitNestedStruct(WeightFactors.loopFactor(), new Expression[]{node.getExpression()}, new Statement[]{node.getBody()});
 	}
 	@Override
 	public boolean visit(ForStatement node) {
-		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
+		return visitNestedStruct(WeightFactors.loopFactor(), new Expression[]{node.getExpression()}, new Statement[]{node.getBody()});
 	}
 	
 	@Override
 	public boolean visit(IfStatement node) {
-		return visitNestedStruct(WeightFactors.conditionalFactor(), node.getExpression(), new Statement[]{node.getThenStatement(), node.getElseStatement()});
+		return visitNestedStruct(WeightFactors.conditionalFactor(), new Expression[]{node.getExpression()}, new Statement[]{node.getThenStatement(), node.getElseStatement()});
 	}
 	@Override
 	public boolean visit(SwitchStatement node) {
@@ -87,58 +91,63 @@ public class WCCVisitor extends ASTVisitor {
 		for(int i=0; i<childs.length;i++)
 			childs[i] = c.get(i);
 
-		return visitNestedStruct(WeightFactors.switchFactor(), node.getExpression(), childs);
+		return visitNestedStruct(WeightFactors.switchFactor(), new Expression[]{node.getExpression()}, childs);
 	}
 	
 	@Override
 	public boolean visit(WhileStatement node) {
-		return visitNestedStruct(WeightFactors.loopFactor(), node.getExpression(), new Statement[]{node.getBody()});
+		return visitNestedStruct(WeightFactors.loopFactor(), new Expression[]{node.getExpression()}, new Statement[]{node.getBody()});
 	}
 
+	@Override
+	public boolean visit(TryStatement node) {
+		List<CatchClause> catchs = (List<CatchClause>) node.catchClauses();
+		Statement[] childs = new Statement[catchs.size()];
+		for(int i=0; i<childs.length;i++)
+			childs[i] = catchs.get(i).getBody();
+
+		
+		return visitNestedStruct(WeightFactors.tryFactor(), new Statement[]{node.getBody(), node.getFinally()}, childs);
+	} 
 	
 	@Override
 	public boolean visit(ConstructorInvocation node) {
-		//these are  this() calls, as they are local calls its only cost
-		// the methodCallWeight without summing the constructor cost itself.
-		cost += WeightFactors.methodCallWeight();
-		expr.append(" + " + WeightFactors.methodCallWeight());
-		return super.visit(node);
+		//these are  this() calls
+		IMethodBinding mb = node.resolveConstructorBinding();
+		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
 	}
 	
 	@Override
 	public boolean visit(SuperConstructorInvocation node) {
-		//TODO: should we count the super cost?
-		cost += WeightFactors.superCallWeight();
-		expr.append(" + " + WeightFactors.superCallWeight());
-		return super.visit(node);
+		IMethodBinding mb = node.resolveConstructorBinding();
+		return doVisitMethodInvocation(mb, WeightFactors.superCallWeight());
 	}
 	
 	public boolean visit(SuperMethodInvocation node) {
-		//TODO: should we count the super cost?
-		cost += WeightFactors.superCallWeight();
-		expr.append(" + " + WeightFactors.superCallWeight());
-		return super.visit(node);
+		IMethodBinding mb = node.resolveMethodBinding();
+		return doVisitMethodInvocation(mb, WeightFactors.superCallWeight());
 	}
 	
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		IMethodBinding mb = node.resolveConstructorBinding();
-		return doVisitMethodInvocation(mb);
+		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
 	}
 	
 	@Override
 	public boolean visit(MethodInvocation node) {
 		IMethodBinding mb = node.resolveMethodBinding();
-		return doVisitMethodInvocation(mb);
+		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
 	}
 		
 	
 		
 	
-	private boolean visitNestedStruct(int factor, Expression exprStatement, Statement[] nested) {
+	private boolean visitNestedStruct(int factor, ASTNode[] linearStatements, Statement[] nested) {
 		WCCVisitor childVisitor = newChildVisitor();
-		if (exprStatement != null)
-			exprStatement.accept(childVisitor); // for expressions might be null
+		for(ASTNode s : linearStatements)
+			if (s != null)
+				s.accept(childVisitor); // for expressions might be null
 		
 		cost += childVisitor.getCost();
 		expr.append(" + (" + childVisitor.getCost() + ")");
@@ -159,13 +168,14 @@ public class WCCVisitor extends ASTVisitor {
 	}
 
 	
-	public boolean doVisitMethodInvocation(IMethodBinding mb) {
+	public boolean doVisitMethodInvocation(IMethodBinding mb, int invFactor) {
 		if (mb.getDeclaringClass() ==
 				this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
-			//local calls are not counted
+			//local calls
+			expr.append("+" +WeightFactors.methodCallWeight());
+			cost += WeightFactors.recursiveCalllWeight();
 			return true;
 		} else {
-
 			MethodSignature targetSignature = MethodSignature.from(mb);
 			if (isUserDefined(targetSignature)) {
 				if (stack.contains(targetSignature)) {
@@ -184,9 +194,9 @@ public class WCCVisitor extends ASTVisitor {
 						int averageCost = averageImplementationCost(mb);
 						cost += WeightFactors.methodCallWeight() + averageCost;
 					} else {
-						expr.append(" +" + WeightFactors.methodCallWeight());
+						expr.append(" +" + invFactor);
 						int methodCost = methodCost(targetSignature);
-						cost += WeightFactors.methodCallWeight() + methodCost;
+						cost += invFactor + methodCost;
 					}
 					MethodSignature pop = this.stack.pop();
 					if (targetSignature != pop)

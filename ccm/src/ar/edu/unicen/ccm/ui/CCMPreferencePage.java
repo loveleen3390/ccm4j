@@ -53,6 +53,10 @@ public class CCMPreferencePage
 				PreferenceConstants.P_SUPER_CALL_WEIGHT, 
 				"Calls to superclass methods", 
 				getFieldEditorParent()));
+		addField(new IntegerFieldEditor(
+				PreferenceConstants.P_TRY_FACTOR, 
+				"Try-catch factor:", 
+				getFieldEditorParent()));
 	}
 
 	/* (non-Javadoc)
