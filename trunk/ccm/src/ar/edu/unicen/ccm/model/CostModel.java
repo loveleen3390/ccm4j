@@ -89,9 +89,8 @@ public class CostModel {
 		//If a class has "0" complexity, its hierarchy weight would be "0" too because
 		//we multiply it. I think that's not the intended result, so here we force it to
 		//1 on those cases.
-		BigInteger baseWeight = BigInteger.valueOf(Math.max(
-				getClassComplexityInfo(baseClass).getWeightedClassComplexity(), 
-				1));
+		
+		BigInteger baseWeight =  getClassComplexityInfo(baseClass).getWeightedClassComplexity().max(BigInteger.valueOf(1)); 
 				
 		if (subtypes.isEmpty()) {
 			return new HierarchyComplexityInfo(baseWeight, 1, 1);

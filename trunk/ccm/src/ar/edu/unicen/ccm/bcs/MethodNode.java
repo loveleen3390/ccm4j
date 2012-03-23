@@ -1,5 +1,6 @@
 package ar.edu.unicen.ccm.bcs;
 
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Stack;
 
@@ -19,8 +20,8 @@ public class MethodNode {
 	
 	public MethodDeclaration md;
 	
-	int cost; //complete cost
-	int flatCost; //"flat" cost: don't take recursion into account
+	BigInteger cost; //complete cost
+	BigInteger flatCost; //"flat" cost: don't take recursion into account
 	
 	String expr;
 	
@@ -31,8 +32,8 @@ public class MethodNode {
 		this.md = md;
 		this.dependencyModel = depModel;
 		this.map = map;
-		this.cost = -1; 
-		this.flatCost = -1;
+		this.cost = null; 
+		this.flatCost = null;
 		this.recursive = false;
 	}
 
@@ -45,17 +46,17 @@ public class MethodNode {
 		return this.expr;
 	}
 	
-	public int getCost() {
+	public BigInteger getCost() {
 		Stack<MethodSignature> stack = new Stack<MethodSignature>();
 		stack.add(this.methodSignature);
 		return getCost(stack);
 	}
-	public int getCost(Stack<MethodSignature> callStack) {
+	public BigInteger getCost(Stack<MethodSignature> callStack) {
 		
-		if (this.cost != -1) {
+		if (this.cost != null) {
 			return this.cost;
 		} else {
-			int calculatedCost = calculateCost(callStack);
+			BigInteger calculatedCost = calculateCost(callStack);
 			if (!this.recursive)  //recursive methods aren't memorized, explain why latter
 				this.cost = calculatedCost;
 			return calculatedCost;
@@ -64,11 +65,11 @@ public class MethodNode {
 	
 	
 	
-	private int calculateCost(Stack<MethodSignature> callStack) {
+	private BigInteger calculateCost(Stack<MethodSignature> callStack) {
 		IMethodBinding mb = md.resolveBinding();
 		if (mb.getDeclaringClass().isInterface() ||
 				Modifier.isAbstract(md.getModifiers()))
-				return 1; // NOTE: this will never be called, we handle this case in WCCVisitor
+				return BigInteger.valueOf(1); // NOTE: this will never be called, we handle this case in WCCVisitor
 		else {
 				WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, callStack);
 				this.md.accept(visitor);

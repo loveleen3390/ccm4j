@@ -63,7 +63,6 @@ public class Utils {
 
 		for (TypeDeclaration t : typesInCu) {
 			String qn = t.resolveBinding().getQualifiedName();
-			System.out.println("FQ: " +qn + " Searching for " + typeHandle.getFullyQualifiedName('.'));
 			if (qn.equals(typeHandle.getFullyQualifiedName('.')))
 				return	t;
 		}
@@ -79,7 +78,6 @@ public class Utils {
 	private static void extractTypesRecursive(AbstractTypeDeclaration t, Collection<TypeDeclaration> types) {
 		if (t.getNodeType() == AbstractTypeDeclaration.TYPE_DECLARATION) {
 			TypeDeclaration td = (TypeDeclaration) t;
-			System.out.println("extract:" + td.resolveBinding().getQualifiedName());
 			types.add(td);
 			for (TypeDeclaration childType : td.getTypes())
 				extractTypesRecursive(childType, types);
