@@ -1,5 +1,6 @@
 package ar.edu.unicen.ccm.model;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,7 +78,7 @@ public class CostModel {
 	}
 	
 	//TODO: count nesting level and total # of classes
-	public int hierarchyCostOf(String baseClass) {
+	public HierarchyComplexityInfo hierarchyCostOf(String baseClass) {
 		Set<String> subtypes;
 		try {
 			subtypes = this.dep.getDirectSubtypes(baseClass);
@@ -89,16 +90,24 @@ public class CostModel {
 		//If a class has "0" complexity, its hierarchy weight would be "0" too because
 		//we multiply it. I think that's not the intended result, so here we force it to
 		//1 on those cases.
-		int baseWeight = Math.max(
+		BigInteger baseWeight = BigInteger.valueOf(Math.max(
 				getClassComplexityInfo(baseClass).getWeightedClassComplexity(), 
-				1);
-		if (subtypes.isEmpty())
-			return baseWeight;
+				1));
+				
+		if (subtypes.isEmpty()) {
+			return new HierarchyComplexityInfo(baseWeight, 1, 1);
+		}
 		else {
-			int childCost = 0;
-			for (String subType : subtypes)
-				childCost += hierarchyCostOf(subType);
-			return baseWeight * childCost;
+			BigInteger childCost = BigInteger.valueOf(0);
+			int max_depth = 1;
+			int childClasses = 0;
+			for (String subType : subtypes) { 
+				HierarchyComplexityInfo childInfo = hierarchyCostOf(subType);
+				childCost = childCost.add(childInfo.getCost());
+				max_depth = Math.max(childInfo.getDepth(), max_depth);
+				childClasses += childInfo.getClasses();
+			}
+			return new HierarchyComplexityInfo(childCost.multiply(baseWeight), max_depth +1, childClasses +1);
 		}
 	}
 	
