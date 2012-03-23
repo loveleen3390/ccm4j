@@ -59,11 +59,14 @@ public class CC extends AbstractHandler {
 					monitor.beginTask("Calculating ..", totalWork);
 
 					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "Method", "Weight", "Weight Expression");
-					for (MethodDeclaration m : cm.getDependencyModel().getMethods()) {
-						MethodNode mn = cm.getMethodComplexity(MethodSignature.from(m.resolveBinding()));
-						csv.addRow(mn.getSignature(), mn.getCost(), mn.getExpr());
-						monitor.worked(1);
+					for(IType t : cm.getTypes()) {
+						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
+						for (MethodNode mn:  info.getMethods().values()) {
+							csv.addRow(mn.getSignature(), mn.getCost(), mn.getExpr());
+							monitor.worked(1);
+						}
 					}
+					
 					csv.save();
 
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
