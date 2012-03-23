@@ -1,5 +1,6 @@
 package ar.edu.unicen.ccm.model;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 import ar.edu.unicen.ccm.bcs.MethodNode;
@@ -29,10 +30,10 @@ public class ClassComplexityInfo {
 	}
 	
 	
-	public int getWeightedClassComplexity() {
-		int r = attrComplexity;
+	public BigInteger getWeightedClassComplexity() {
+		BigInteger r = BigInteger.valueOf(getAttrComplexity());
 		for (MethodNode v : methods.values())
-				r += v.getCost();
+				r = r.add(v.getCost());
 		return r;
 	}
 

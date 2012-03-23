@@ -1,5 +1,6 @@
 package ar.edu.unicen.ccm.bcs;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +34,7 @@ import ar.edu.unicen.ccm.WeightFactors;
 import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class WCCVisitor extends ASTVisitor {
-	public int cost;
+	public BigInteger cost;
 	DependencyModel depModel;
 	Map<MethodSignature, MethodNode> methodMap;
 	MethodNode currentMethod;
@@ -41,7 +42,7 @@ public class WCCVisitor extends ASTVisitor {
 	Stack<MethodSignature> stack;
 	
 	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<MethodSignature, MethodNode> methodMap,  Stack<MethodSignature> stack) {
-		this.cost = 0;
+		this.cost = BigInteger.valueOf(0);
 		this.currentMethod = currentMethod;
 		this.depModel = depModel;
 		this.methodMap = methodMap;
@@ -49,7 +50,7 @@ public class WCCVisitor extends ASTVisitor {
 		this.stack = stack;
 	}
 
-	public int getCost() {
+	public BigInteger getCost() {
 		return cost;
 	}
 	
@@ -60,7 +61,7 @@ public class WCCVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(MethodDeclaration node) {
 		//Sequence: only 1 for each method, at the top level.
-		cost += WeightFactors.sequenceWeight();
+		cost = cost.add(WeightFactors.sequenceWeight());
 		expr.append(WeightFactors.sequenceWeight() +" ");
 		return super.visit(node);
 	}
@@ -143,13 +144,13 @@ public class WCCVisitor extends ASTVisitor {
 	
 		
 	
-	private boolean visitNestedStruct(int factor, ASTNode[] linearStatements, Statement[] nested) {
+	private boolean visitNestedStruct(BigInteger factor, ASTNode[] linearStatements, Statement[] nested) {
 		WCCVisitor childVisitor = newChildVisitor();
 		for(ASTNode s : linearStatements)
 			if (s != null)
 				s.accept(childVisitor); // for expressions might be null
 		
-		cost += childVisitor.getCost();
+		cost = cost.add(childVisitor.getCost());
 		expr.append(" + (" + childVisitor.getCost() + ")");
 				
 		
@@ -157,23 +158,24 @@ public class WCCVisitor extends ASTVisitor {
 		for(Statement child : nested)
 			if (child != null)
 				child.accept(childVisitor);  //else branch may be null
-		int childCost = childVisitor.getCost();
-		if (childCost == 0)
-			childCost = 1; //we multiply, so nested cost can't be zero.  
+		BigInteger childCost = childVisitor.getCost();
+		if (childCost.equals(BigInteger.valueOf(0)))
+			childCost = BigInteger.valueOf(1); //we multiply, so nested cost can't be zero.  
 		
 		expr.append(" + " + factor + " * [" + childVisitor.getExpr() + "]");
 
-		cost += factor * childCost;
+		cost = cost.add(childCost.multiply(factor));
+		        
 		return false;
 	}
 
 	
-	public boolean doVisitMethodInvocation(IMethodBinding mb, int invFactor) {
+	public boolean doVisitMethodInvocation(IMethodBinding mb, BigInteger invFactor) {
 		if (mb.getDeclaringClass() ==
 				this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
 			//local calls
 			expr.append("+" +WeightFactors.methodCallWeight());
-			cost += WeightFactors.recursiveCalllWeight();
+			cost = cost.add(WeightFactors.recursiveCalllWeight());
 			return true;
 		} else {
 			MethodSignature targetSignature = MethodSignature.from(mb);
@@ -186,17 +188,17 @@ public class WCCVisitor extends ASTVisitor {
 					}
 
 					expr.append("+" +WeightFactors.recursiveCalllWeight());
-					cost += WeightFactors.recursiveCalllWeight();
+					cost = cost.add(WeightFactors.recursiveCalllWeight());
 				} else {
 					stack.add(targetSignature);
 					if (Modifier.isAbstract(mb.getModifiers())) {
 						expr.append(" + " + WeightFactors.methodCallWeight());
-						int averageCost = averageImplementationCost(mb);
-						cost += WeightFactors.methodCallWeight() + averageCost;
+						BigInteger averageCost = averageImplementationCost(mb);
+						cost = cost.add(averageCost.add(WeightFactors.methodCallWeight()));
 					} else {
 						expr.append(" +" + invFactor);
-						int methodCost = methodCost(targetSignature);
-						cost += invFactor + methodCost;
+						BigInteger methodCost = methodCost(targetSignature);
+						cost = cost.add(methodCost.add(invFactor));
 					}
 					MethodSignature pop = this.stack.pop();
 					if (targetSignature != pop)
@@ -213,30 +215,30 @@ public class WCCVisitor extends ASTVisitor {
 	}
 			
 	
-	private int averageImplementationCost(IMethodBinding mb) {
+	private BigInteger averageImplementationCost(IMethodBinding mb) {
 		Set<MethodSignature> implementations;
 		try {
 			implementations = this.depModel.getImplementations(mb);
 		} catch (JavaModelException e) {
 			e.printStackTrace();
-			return 0;  //TODO: emit a warning somehow
+			return BigInteger.valueOf(0);  //TODO: emit a warning somehow
 		}
 		if (implementations.isEmpty()) {
 			System.out.println("Warnning " + MethodSignature.from(mb) + " doesn't have implementations");
-			return 0; //patological case
+			return BigInteger.valueOf(0); //patological case
 		}
 		else {
-			int total = 0;
+			BigInteger total = BigInteger.valueOf(0);
 			expr.append("+ {");
 			for(MethodSignature impl : implementations) {
 				if (stack.contains(impl)) {
 					// recursive call to an abstract method  (composite-like pattern)
 					// we consider only the cost of recursion factor
 					expr.append(" +" + WeightFactors.recursiveCalllWeight());
-					total += WeightFactors.recursiveCalllWeight();
+					total =  total.add(WeightFactors.recursiveCalllWeight());
 				} else {
 				stack.add(impl);
-				total+= methodCost(impl);
+				total =  total.add(methodCost(impl));
 				MethodSignature pop = this.stack.pop();
 				if (impl != pop)
 					System.out.println("Error!: ms: " + impl + "  pop:" + pop);
@@ -245,13 +247,13 @@ public class WCCVisitor extends ASTVisitor {
 			}
 			expr.append("}/");
 			expr.append(implementations.size());
-			return total / implementations.size();
+			return total.divide(BigInteger.valueOf(implementations.size()));
 		}
 	}
 	
-	private int methodCost(MethodSignature targetSignature) {
+	private BigInteger methodCost(MethodSignature targetSignature) {
 		MethodNode target = this.methodMap.get(targetSignature);
-		int callCost = target.getCost(this.stack);
+		BigInteger callCost = target.getCost(this.stack);
 		expr.append(" + [" + callCost + "]");
 		return  callCost;
 	}
