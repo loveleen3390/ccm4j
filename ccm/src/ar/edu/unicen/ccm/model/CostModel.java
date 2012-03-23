@@ -77,7 +77,6 @@ public class CostModel {
 		
 	}
 	
-	//TODO: count nesting level and total # of classes
 	public HierarchyComplexityInfo hierarchyCostOf(String baseClass) {
 		Set<String> subtypes;
 		try {
