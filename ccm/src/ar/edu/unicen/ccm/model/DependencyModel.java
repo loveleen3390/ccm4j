@@ -1,7 +1,6 @@
 package ar.edu.unicen.ccm.model;
 
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;

@@ -1,6 +1,5 @@
 package ar.edu.unicen.ccm.model;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class HierarchyComplexityInfo {

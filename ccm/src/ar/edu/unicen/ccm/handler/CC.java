@@ -11,14 +11,10 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import ar.edu.unicen.ccm.bcs.MethodNode;
-import ar.edu.unicen.ccm.bcs.MethodSignature;
 import ar.edu.unicen.ccm.model.ClassComplexityInfo;
 import ar.edu.unicen.ccm.model.CostModel;
 import ar.edu.unicen.ccm.model.HierarchyComplexityInfo;
