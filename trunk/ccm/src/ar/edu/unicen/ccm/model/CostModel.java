@@ -93,19 +93,25 @@ public class CostModel {
 		BigInteger baseWeight =  getClassComplexityInfo(baseClass).getWeightedClassComplexity().max(BigInteger.valueOf(1)); 
 				
 		if (subtypes.isEmpty()) {
-			return new HierarchyComplexityInfo(baseWeight, 1, 1);
+			return new HierarchyComplexityInfo(baseWeight, 1, 1,  String.valueOf(baseWeight));
 		}
 		else {
 			BigInteger childCost = BigInteger.valueOf(0);
 			int max_depth = 1;
 			int childClasses = 0;
+			StringBuilder expressions = new StringBuilder();
+			expressions.append("(");
 			for (String subType : subtypes) { 
 				HierarchyComplexityInfo childInfo = hierarchyCostOf(subType);
 				childCost = childCost.add(childInfo.getCost());
 				max_depth = Math.max(childInfo.getDepth(), max_depth);
 				childClasses += childInfo.getClasses();
+				expressions.append("+" + childInfo.getExpr());
 			}
-			return new HierarchyComplexityInfo(childCost.multiply(baseWeight), max_depth +1, childClasses +1);
+			expressions.append(")");
+			
+		
+			return new HierarchyComplexityInfo(childCost.multiply(baseWeight), max_depth +1, childClasses +1, baseWeight + "*" + expressions.toString());
 		}
 	}
 	

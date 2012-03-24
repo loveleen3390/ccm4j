@@ -78,19 +78,19 @@ public class CC extends AbstractHandler {
 					}
 					csv.save();
 
-					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "Hierarchy", "Weight", "#classes", "depth");
+					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "Hierarchy", "Weight", "#classes", "depth", "expr");
 					BigInteger totalCost = BigInteger.valueOf(0);
 					int classes = 0;
 					int max_depth = 0;
 					for(String root : cm.getDependencyModel().getRootClasses()) {
 						HierarchyComplexityInfo cost = cm.hierarchyCostOf(root);
-						csv.addRow(root, cost.getCost(), cost.getClasses(), cost.getDepth());
+						csv.addRow(root, cost.getCost(), cost.getClasses(), cost.getDepth(), cost.getExpr());
 						totalCost = totalCost.add(cost.getCost());
 						max_depth = Math.max(max_depth, cost.getDepth());
 						classes += cost.getClasses();
 						monitor.worked(1);
 					}
-					csv.addRow("TOTAL", totalCost, classes, max_depth);
+					csv.addRow("TOTAL", totalCost, classes, max_depth, "-");
 					csv.save();
 
 				} catch (Exception e ) {
