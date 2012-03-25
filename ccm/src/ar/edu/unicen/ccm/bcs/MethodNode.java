@@ -8,6 +8,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 
+import ar.edu.unicen.ccm.model.CostModel;
 import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class MethodNode {
@@ -15,7 +16,7 @@ public class MethodNode {
 	MethodSignature methodSignature;
 	
 	//DirectedGraph<MethodNode, DefaultEdge> graph;
-	DependencyModel dependencyModel;
+	CostModel costModel;
 	private Map<MethodSignature, MethodNode> map;
 	
 	public MethodDeclaration md;
@@ -27,10 +28,10 @@ public class MethodNode {
 	
 	boolean recursive;
 	
-	public MethodNode(MethodDeclaration md, DependencyModel depModel, Map<MethodSignature, MethodNode> map) {
+	public MethodNode(MethodDeclaration md, CostModel costModel, Map<MethodSignature, MethodNode> map) {
 		this.methodSignature = MethodSignature.from(md.resolveBinding());
 		this.md = md;
-		this.dependencyModel = depModel;
+		this.costModel = costModel;
 		this.map = map;
 		this.cost = null; 
 		this.flatCost = null;
@@ -71,7 +72,7 @@ public class MethodNode {
 				Modifier.isAbstract(md.getModifiers()))
 				return BigInteger.valueOf(1); // NOTE: this will never be called, we handle this case in WCCVisitor
 		else {
-				WCCVisitor visitor = new WCCVisitor(this, this.dependencyModel, map, callStack);
+				WCCVisitor visitor = new WCCVisitor(this, this.costModel, map, callStack);
 				this.md.accept(visitor);
 				
 				this.expr = visitor.getExpr();

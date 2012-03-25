@@ -1,6 +1,8 @@
 package ar.edu.unicen.ccm.bcs;
 
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,22 +31,24 @@ import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
 import ar.edu.unicen.ccm.WeightFactors;
+import ar.edu.unicen.ccm.bcs.abstractmethod.MethodWeightStrategy;
+import ar.edu.unicen.ccm.model.CostModel;
 import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class WCCVisitor extends ASTVisitor {
 	public BigInteger cost;
-	DependencyModel depModel;
+	CostModel costModel;
 	Map<MethodSignature, MethodNode> methodMap;
 	MethodNode currentMethod;
-	StringBuffer expr;
+	StringBuilder expr;
 	Stack<MethodSignature> stack;
 	
-	public WCCVisitor(MethodNode currentMethod, DependencyModel depModel, Map<MethodSignature, MethodNode> methodMap,  Stack<MethodSignature> stack) {
+	public WCCVisitor(MethodNode currentMethod, CostModel costModel, Map<MethodSignature, MethodNode> methodMap,  Stack<MethodSignature> stack) {
 		this.cost = BigInteger.valueOf(0);
 		this.currentMethod = currentMethod;
-		this.depModel = depModel;
+		this.costModel = costModel;
 		this.methodMap = methodMap;
-		this.expr = new StringBuffer();
+		this.expr = new StringBuilder();
 		this.stack = stack;
 	}
 
@@ -173,7 +177,7 @@ public class WCCVisitor extends ASTVisitor {
 				this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
 			//local calls
 			expr.append("+" +WeightFactors.methodCallWeight());
-			cost = cost.add(WeightFactors.recursiveCalllWeight());
+			cost = cost.add(WeightFactors.methodCallWeight());
 			return true;
 		} else {
 			MethodSignature targetSignature = MethodSignature.from(mb);
@@ -190,12 +194,14 @@ public class WCCVisitor extends ASTVisitor {
 				} else {
 					stack.add(targetSignature);
 					if (Modifier.isAbstract(mb.getModifiers())) {
-						expr.append(" + " + WeightFactors.methodCallWeight());
-						BigInteger averageCost = averageImplementationCost(mb);
-						cost = cost.add(averageCost.add(WeightFactors.methodCallWeight()));
+						expr.append(" +").append(WeightFactors.methodCallWeight()).append("+");
+						BigInteger abstractCost = abstractImplementationCost(mb);
+						cost = cost.add(abstractCost.add(WeightFactors.methodCallWeight()));
 					} else {
-						expr.append(" +" + invFactor);
+						
 						BigInteger methodCost = methodCost(targetSignature);
+						expr.append(" +").append(invFactor).
+							append(" + [").append(methodCost).append("]");
 						cost = cost.add(methodCost.add(invFactor));
 					}
 					MethodSignature pop = this.stack.pop();
@@ -213,52 +219,50 @@ public class WCCVisitor extends ASTVisitor {
 	}
 			
 	
-	private BigInteger averageImplementationCost(IMethodBinding mb) {
-		Set<MethodSignature> implementations;
-		try {
-			implementations = this.depModel.getImplementations(mb);
-		} catch (JavaModelException e) {
-			e.printStackTrace();
-			return BigInteger.valueOf(0);  //TODO: emit a warning somehow
-		}
+	private BigInteger abstractImplementationCost(IMethodBinding mb) {
+		Set<MethodSignature> implementations = getImplementationsOf(mb);
 		if (implementations.isEmpty()) {
 			System.out.println("Warnning " + MethodSignature.from(mb) + " doesn't have implementations");
 			return BigInteger.valueOf(0); //patological case
-		}
-		else {
-			BigInteger total = BigInteger.valueOf(0);
-			expr.append("+ {");
+		} else {
+			List<BigInteger> costs = new LinkedList<BigInteger>();
 			for(MethodSignature impl : implementations) {
 				if (stack.contains(impl)) {
 					// recursive call to an abstract method  (composite-like pattern)
 					// we consider only the cost of recursion factor
-					expr.append(" +" + WeightFactors.recursiveCalllWeight());
-					total =  total.add(WeightFactors.recursiveCalllWeight());
+					costs.add(WeightFactors.recursiveCalllWeight());
 				} else {
-				stack.add(impl);
-				total =  total.add(methodCost(impl));
-				MethodSignature pop = this.stack.pop();
-				if (impl != pop)
-					System.out.println("Error!: ms: " + impl + "  pop:" + pop);
+					stack.add(impl);
+					costs.add(methodCost(impl));
+					MethodSignature pop = this.stack.pop();
+					if (impl != pop)
+						System.out.println("Error!: ms: " + impl + "  pop:" + pop);
 				}
 
 			}
-			expr.append("}/");
-			expr.append(implementations.size());
-			return total.divide(BigInteger.valueOf(implementations.size()));
+			return this.costModel.getMethodWeightStrategy().weight(costs, this.expr);
 		}
 	}
-	
+
 	private BigInteger methodCost(MethodSignature targetSignature) {
 		MethodNode target = this.methodMap.get(targetSignature);
 		BigInteger callCost = target.getCost(this.stack);
-		expr.append(" + [" + callCost + "]");
 		return  callCost;
 	}
 	
 		
 	private WCCVisitor newChildVisitor() {
-		return new WCCVisitor(this.currentMethod, this.depModel, this.methodMap, this.stack);
+		return new WCCVisitor(this.currentMethod, this.costModel, this.methodMap, this.stack);
+	}
+	
+	private Set<MethodSignature> getImplementationsOf(IMethodBinding mb) {
+		try {
+			return this.costModel.getDependencyModel().getImplementations(mb);
+		} catch (JavaModelException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return new HashSet<MethodSignature>();
+		}
 	}
 	
 }

@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import ar.edu.unicen.ccm.bcs.MethodSignature;
+import ar.edu.unicen.ccm.utils.Utils;
 
 public class DependencyModel {
 	IJavaProject project;
@@ -34,19 +35,36 @@ public class DependencyModel {
 	Set<String> interfaces; 
 	ITypeHierarchy typeHierarchy;
 	Set<IPackageFragment> packages;
+	String[] rules;
 	
 	public DependencyModel(IJavaProject project) throws JavaModelException {
 		this.project = project;
 		IRegion region = JavaCore.newRegion();
 		this.packages = new HashSet<IPackageFragment>();
+		
+		 
+		this.rules = Utils.readFile(project.getProject().getFile("ccm4j.packages"));
+		
 		for (IPackageFragment pk : project.getPackageFragments()) {
 			if (pk.getKind() == IPackageFragmentRoot.K_SOURCE) {
-				region.add(pk);
-				packages.add(pk);
+				if (isPkIncluded(pk)) {
+					region.add(pk);
+					packages.add(pk);
+				}
 			}
 		}
 		this.typeHierarchy = project.newTypeHierarchy(region, null);
+		
+		 
+		
 		buildModel();
+	}
+	private boolean isPkIncluded(IPackageFragment pk) {
+		for (String rule : this.rules ) {
+			if (rule.equals(pk.getElementName())) 
+				return true;
+		}
+		return rules.length == 0; //if not specified, include all by default
 	}
 	
 
@@ -64,7 +82,6 @@ public class DependencyModel {
 	}
 
 	private boolean isClassInScope(IType t) throws JavaModelException {
-		//TODO: handle this is a better way..
 		IPackageFragment p = t.getPackageFragment();
 		// TODO: we don't handle anonymous defined classes yet
 		return this.packages.contains(p) && !t.isAnonymous();
@@ -152,7 +169,7 @@ public class DependencyModel {
 			throws JavaModelException {
 		Collection<TypeDeclaration> types = new LinkedList<TypeDeclaration>();
 		// find all declared types (including nested ones)
-		for (IPackageFragment pk : project.getPackageFragments()) {
+		for (IPackageFragment pk : this.packages) {
 			if (pk.getKind() == IPackageFragmentRoot.K_SOURCE)
 				for (ICompilationUnit unit : pk.getCompilationUnits()) {
 					ASTParser parser = ASTParser.newParser(AST.JLS3);

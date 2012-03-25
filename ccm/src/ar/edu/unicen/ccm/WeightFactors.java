@@ -2,6 +2,7 @@ package ar.edu.unicen.ccm;
 
 import java.math.BigInteger;
 
+import ar.edu.unicen.ccm.bcs.abstractmethod.MethodWeightStrategy;
 import ar.edu.unicen.ccm.ui.PreferenceConstants;
 
 /**
@@ -45,6 +46,11 @@ public class WeightFactors {
 		return BigInteger.valueOf(Activator.getDefault().getPreferenceStore().getInt(key));
 	}
 	
+	
+	public static MethodWeightStrategy methodWeightStrategy() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+		String clazz = Activator.getDefault().getPreferenceStore().getString(PreferenceConstants.P_STRATEGY);
+		return (MethodWeightStrategy)Class.forName(clazz).newInstance();
+	}
 
 	
 	

@@ -13,8 +13,11 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
+import ar.edu.unicen.ccm.WeightFactors;
 import ar.edu.unicen.ccm.bcs.MethodNode;
 import ar.edu.unicen.ccm.bcs.MethodSignature;
+import ar.edu.unicen.ccm.bcs.abstractmethod.AverageWeightStrategy;
+import ar.edu.unicen.ccm.bcs.abstractmethod.MethodWeightStrategy;
 import ar.edu.unicen.ccm.utils.Utils;
 
 public class CostModel {
@@ -24,8 +27,17 @@ public class CostModel {
 	
 	Map<String, ClassComplexityInfo> weightedClassComplexity;
 	
+	private MethodWeightStrategy methodWeightStrategy;
+	
+	
 	public CostModel(IJavaProject project) throws JavaModelException {
 		this.dep = new DependencyModel(project);
+		try {
+			this.methodWeightStrategy = WeightFactors.methodWeightStrategy();
+		} catch (Exception e) {
+			this.methodWeightStrategy = new AverageWeightStrategy(); //default one
+			e.printStackTrace();
+		} 
 		analyze();
 	}
 	
@@ -46,7 +58,7 @@ public class CostModel {
 		this.weightedClassComplexity = new HashMap<String, ClassComplexityInfo>();
 		for(MethodDeclaration md : dep.getMethods()) {
 			MethodSignature signature = MethodSignature.from(md.resolveBinding());
-			this.methodComplexity.put(signature,new MethodNode(md, dep, this.methodComplexity));
+			this.methodComplexity.put(signature,new MethodNode(md, this, this.methodComplexity));
 		}
 		
 		for (IType t : getTypes()) {
@@ -112,6 +124,10 @@ public class CostModel {
 	
 	public MethodNode getMethodComplexity(MethodSignature signature) {
 		return methodComplexity.get(signature);
+	}
+	
+	public MethodWeightStrategy getMethodWeightStrategy() {
+		return methodWeightStrategy;
 	}
 		
 }
