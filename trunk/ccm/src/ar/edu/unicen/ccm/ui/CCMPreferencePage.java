@@ -5,6 +5,9 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.IWorkbench;
 
 import ar.edu.unicen.ccm.Activator;
+import ar.edu.unicen.ccm.bcs.abstractmethod.AverageWeightStrategy;
+import ar.edu.unicen.ccm.bcs.abstractmethod.MaxWeightStrategy;
+import ar.edu.unicen.ccm.bcs.abstractmethod.MinWeightStrategy;
 
 
 public class CCMPreferencePage
@@ -57,6 +60,16 @@ public class CCMPreferencePage
 				PreferenceConstants.P_TRY_FACTOR, 
 				"Try-catch factor:", 
 				getFieldEditorParent()));
+		addField(new RadioGroupFieldEditor(
+				PreferenceConstants.P_STRATEGY, 
+				"Strategy for abstract methods",
+				3,
+				new String[][] {new String[]{"Average", AverageWeightStrategy.class.getName()},
+							   new String[]{"Min", MinWeightStrategy.class.getName()},
+							   new String[]{"Max", MaxWeightStrategy.class.getName()}
+							  },
+				 getFieldEditorParent())); 
+		
 	}
 
 	/* (non-Javadoc)

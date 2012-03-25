@@ -13,6 +13,7 @@ public class PreferenceConstants {
 	public static final String P_SEQUENCE_WEIGHT = "secuenceWeight";
 	public static final String P_SWITCH_FACTOR = "switchFactor";
 	public static final String P_TRY_FACTOR = "tryFactor";
+	public static final String P_STRATEGY = "abstractMethodStrategy";
 	
 	
 	

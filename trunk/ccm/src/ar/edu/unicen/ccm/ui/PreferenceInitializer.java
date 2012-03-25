@@ -4,6 +4,7 @@ import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
 import org.eclipse.jface.preference.IPreferenceStore;
 
 import ar.edu.unicen.ccm.Activator;
+import ar.edu.unicen.ccm.bcs.abstractmethod.AverageWeightStrategy;
 
 
 /**
@@ -26,6 +27,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		store.setDefault(PreferenceConstants.P_SEQUENCE_WEIGHT, 1);
 		store.setDefault(PreferenceConstants.P_SWITCH_FACTOR, 3);
 		store.setDefault(PreferenceConstants.P_TRY_FACTOR, 3);
+		store.setDefault(PreferenceConstants.P_STRATEGY, AverageWeightStrategy.class.getName());
 	}
 
 }

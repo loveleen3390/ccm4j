@@ -1,10 +1,19 @@
 package ar.edu.unicen.ccm.utils;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.AST;
@@ -81,6 +90,38 @@ public class Utils {
 				extractTypesRecursive(childType, types);
 		}
 	}
+	
+	
+	public static String[] readFile(IFile file) {
+		List<String> result = new LinkedList<String>();
+
+
+		try {
+			InputStream fstream =file.getContents();
+			// Get the object of DataInputStream
+			DataInputStream in = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String strLine;
+			//Read File Line By Line
+			while ((strLine = br.readLine()) != null)   {
+				result.add(strLine);
+			}
+			//Close the input stream
+			in.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return result.toArray(new String[result.size()]);
+	}
+	
 	
 	
 }

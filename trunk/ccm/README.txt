@@ -1,6 +1,3 @@
-Falta testear bien las llamadas recursivas que se hacen desde las implementaciones de metodos
-abstractos. (Ej: composite, llamando a al metodo abstracto base del composite)
-
 Llamadas a constructores:  no cuenta nada cuando son llamadas a constructores implicitos.
 
 
@@ -21,11 +18,6 @@ como hacer?..
 Si esta -> listo
 Si no, buscar para arriba hasta object, si lo encuentro -> listo
 Si no, si es abstracto, ok.   Si no es abstracto, ERROR!.
-
-
-
-
-
 Warnning org.apache.xerces.xni.parser.XMLParserConfiguration.addRecognizedProperties(java.lang.String[]) doesn't have implementations
 Warnning org.apache.xerces.xni.parser.XMLParserConfiguration.addRecognizedFeatures(java.lang.String[]) doesn't have implementations
 Warnning org.apache.xerces.xni.parser.XMLParserConfiguration.addRecognizedProperties(java.lang.String[]) doesn't have implementations
