@@ -8,6 +8,7 @@ import ar.edu.unicen.ccm.Activator;
 import ar.edu.unicen.ccm.bcs.abstractmethod.AverageWeightStrategy;
 import ar.edu.unicen.ccm.bcs.abstractmethod.MaxWeightStrategy;
 import ar.edu.unicen.ccm.bcs.abstractmethod.MinWeightStrategy;
+import ar.edu.unicen.ccm.bcs.abstractmethod.SumWeightStrategy;
 
 
 public class CCMPreferencePage
@@ -66,7 +67,8 @@ public class CCMPreferencePage
 				3,
 				new String[][] {new String[]{"Average", AverageWeightStrategy.class.getName()},
 							   new String[]{"Min", MinWeightStrategy.class.getName()},
-							   new String[]{"Max", MaxWeightStrategy.class.getName()}
+							   new String[]{"Max", MaxWeightStrategy.class.getName()},
+							   new String[]{"Sum", SumWeightStrategy.class.getName()}
 							  },
 				 getFieldEditorParent())); 
 		
