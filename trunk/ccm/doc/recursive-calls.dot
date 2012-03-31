@@ -1,0 +1,9 @@
+digraph recursivecalls {
+	a [label ="A.multiply3"]
+	b [label ="B.multiply3"]
+	c [label ="C.multiply3"]
+
+	a -> b
+	b -> c
+	c -> a
+}
