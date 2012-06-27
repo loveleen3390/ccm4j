@@ -133,8 +133,9 @@ public class DependencyModel {
 	public Set<MethodSignature> getImplementations(IMethodBinding mb) throws JavaModelException {
 		String type = mb.getDeclaringClass().getQualifiedName();
 		Set<MethodSignature> result = new HashSet<MethodSignature>();
-		for (IType t : getAllSubtypes(type)) {
-			MethodSignature signature = MethodSignature.from(t.getFullyQualifiedName('.'), mb.getName(),  mb.getParameterTypes());
+		IType[] subtypes = getAllSubtypes(type);
+		for (IType t : subtypes) {
+			
 			//All subtypes that had an implementation of this method.
 			//TODO: I didn't find a reasonable way to figure out the REAL implementations,
 			//      that is, classes that DO define the method, and not only inherit it from
@@ -142,8 +143,16 @@ public class DependencyModel {
 			//      we still need to construct the method map in advance, with lot of overhead
 			//      Once I fix this,  I think we should be able to do the analysis in streaming
 			//		reducing memory and cpu consuption
-			if (this.methods.containsKey(signature))
-				result.add(signature);
+			IType toCheck = t;
+			while((toCheck != null) && isClassInScope(toCheck)) {
+				MethodSignature signature = MethodSignature.from(toCheck.getFullyQualifiedName('.'), mb.getName(),  mb.getParameterTypes());
+				if (this.methods.containsKey(signature)) {
+					result.add(signature);
+					break;
+				}
+				toCheck = this.typeHierarchy.getSuperclass(toCheck);
+			}
+
 		}
 		return result;
 	}
