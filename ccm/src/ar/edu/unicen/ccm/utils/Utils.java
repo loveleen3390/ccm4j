@@ -109,8 +109,7 @@ public class Utils {
 			//Close the input stream
 			in.close();
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			; //This is ok, there is no error if there is no ccm4j.packages file
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
