@@ -122,13 +122,15 @@ public class WCCVisitor extends ASTVisitor {
 	
 	@Override
 	public boolean visit(SuperConstructorInvocation node) {
-		IMethodBinding mb = node.resolveConstructorBinding();
-		return doVisitMethodInvocation(mb, WeightFactors.superCallWeight());
+		expr.append("+" +WeightFactors.methodCallWeight());
+		cost = cost.add(WeightFactors.methodCallWeight());
+		return true;
 	}
 	
 	public boolean visit(SuperMethodInvocation node) {
-		IMethodBinding mb = node.resolveMethodBinding();
-		return doVisitMethodInvocation(mb, WeightFactors.superCallWeight());
+		expr.append("+" +WeightFactors.methodCallWeight());
+		cost = cost.add(WeightFactors.methodCallWeight());
+		return true;
 	}
 	
 	@Override
@@ -142,8 +144,6 @@ public class WCCVisitor extends ASTVisitor {
 		IMethodBinding mb = node.resolveMethodBinding();
 		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
 	}
-		
-	
 		
 	
 	private boolean visitNestedStruct(BigInteger factor, ASTNode[] linearStatements, Statement[] nested) {
@@ -173,7 +173,7 @@ public class WCCVisitor extends ASTVisitor {
 
 	
 	public boolean doVisitMethodInvocation(IMethodBinding mb, BigInteger invFactor) {
-		if (mb.getDeclaringClass() ==
+		if (mb.getDeclaringClass()  ==
 				this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
 			//local calls
 			expr.append("+" +WeightFactors.methodCallWeight());
