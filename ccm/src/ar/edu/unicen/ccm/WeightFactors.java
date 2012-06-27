@@ -31,9 +31,7 @@ public class WeightFactors {
 	public static BigInteger recursiveCalllWeight() {
 		return get(PreferenceConstants.P_RECURSIVE_CALL_WEIGHT);
 	}
-	public static BigInteger superCallWeight() {
-		return get(PreferenceConstants.P_SUPER_CALL_WEIGHT);
-	}
+	
 	public static BigInteger sequenceWeight() {
 		return get(PreferenceConstants.P_SEQUENCE_WEIGHT);
 	}
