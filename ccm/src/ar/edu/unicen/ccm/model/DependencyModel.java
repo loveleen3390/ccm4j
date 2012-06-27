@@ -61,7 +61,7 @@ public class DependencyModel {
 	}
 	private boolean isPkIncluded(IPackageFragment pk) {
 		for (String rule : this.rules ) {
-			if (rule.equals(pk.getElementName())) 
+			if (pk.getElementName().startsWith(rule)) 
 				return true;
 		}
 		return rules.length == 0; //if not specified, include all by default
