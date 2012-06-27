@@ -95,27 +95,26 @@ public class Utils {
 	public static String[] readFile(IFile file) {
 		List<String> result = new LinkedList<String>();
 
-
-		try {
-			InputStream fstream =file.getContents();
-			// Get the object of DataInputStream
-			DataInputStream in = new DataInputStream(fstream);
-			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			String strLine;
-			//Read File Line By Line
-			while ((strLine = br.readLine()) != null)   {
-				result.add(strLine);
+		if (file.exists()) {
+			try {
+				InputStream fstream =file.getContents();
+				// Get the object of DataInputStream
+				DataInputStream in = new DataInputStream(fstream);
+				BufferedReader br = new BufferedReader(new InputStreamReader(in));
+				String strLine;
+				//Read File Line By Line
+				while ((strLine = br.readLine()) != null)   {
+					result.add(strLine);
+				}
+				//Close the input stream
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			//Close the input stream
-			in.close();
-		} catch (FileNotFoundException e) {
-			; //This is ok, there is no error if there is no ccm4j.packages file
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 
 		return result.toArray(new String[result.size()]);
