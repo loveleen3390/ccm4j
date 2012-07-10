@@ -5,22 +5,14 @@ import java.math.BigInteger;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.internal.core.search.JavaSearchScope;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.dialogs.CheckedTreeSelectionDialog;
-import org.eclipse.ui.dialogs.SelectionDialog;
 import org.eclipse.ui.handlers.HandlerUtil;
-import org.eclipse.ui.model.BaseWorkbenchContentProvider;
-import org.eclipse.ui.model.WorkbenchLabelProvider;
 
 import ar.edu.unicen.ccm.bcs.MethodNode;
 import ar.edu.unicen.ccm.model.ClassComplexityInfo;
@@ -74,10 +66,14 @@ public class CC extends AbstractHandler {
 					csv.save();
 
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
-							"Class", "# methods", "# attributes",  "Weight");
+							"Class", "Superclass", "# methods", "# attributes",  "Weight");
 					for(IType t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
-						csv.addRow(info.getName(), info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity());
+						/**
+						 * @todo habría que obtener el nombre completo de la superclase.
+						 */
+						String superclass = (t.getSuperclassName()!=null) ? t.getSuperclassName() : "Object";
+						csv.addRow(info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity());												
 						monitor.worked(1);
 					}
 					csv.save();
