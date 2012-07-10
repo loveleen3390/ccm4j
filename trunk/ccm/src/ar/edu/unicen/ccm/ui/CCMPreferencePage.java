@@ -35,7 +35,7 @@ public class CCMPreferencePage
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_CONDITIONAL_FACTOR, 
-				"Conditional factor", 
+				"Conditional factor:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_LOOP_FACTOR, 
@@ -47,11 +47,11 @@ public class CCMPreferencePage
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_METHOD_CALL_WEIGHT, 
-				"Method invocation weight", 
+				"Method invocation weight:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_RECURSIVE_CALL_WEIGHT, 
-				"Recursive call weight", 
+				"Recursive call weight:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_TRY_FACTOR, 
@@ -59,8 +59,8 @@ public class CCMPreferencePage
 				getFieldEditorParent()));
 		addField(new RadioGroupFieldEditor(
 				PreferenceConstants.P_STRATEGY, 
-				"Strategy for abstract methods",
-				3,
+				"Strategy for abstract methods:",
+				4,
 				new String[][] {new String[]{"Average", AverageWeightStrategy.class.getName()},
 							   new String[]{"Min", MinWeightStrategy.class.getName()},
 							   new String[]{"Max", MaxWeightStrategy.class.getName()},
