@@ -130,6 +130,9 @@ public class DependencyModel {
 		return result;
 	}
 	
+	public IType getSuperClass(IType clazz) {
+		return this.typeHierarchy.getSuperclass(clazz);
+	}
 	public Set<MethodSignature> getImplementations(IMethodBinding mb) throws JavaModelException {
 		String type = mb.getDeclaringClass().getQualifiedName();
 		Set<MethodSignature> result = new HashSet<MethodSignature>();

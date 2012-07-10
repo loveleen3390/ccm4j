@@ -69,10 +69,8 @@ public class CC extends AbstractHandler {
 							"Class", "Superclass", "# methods", "# attributes",  "Weight");
 					for(IType t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
-						/**
-						 * @todo habría que obtener el nombre completo de la superclase.
-						 */
-						String superclass = (t.getSuperclassName()!=null) ? t.getSuperclassName() : "Object";
+						IType superClassType = cm.getDependencyModel().getSuperClass(t);
+						String superclass = (superClassType != null) ? superClassType.getFullyQualifiedName('.') : "java.lang.Object";
 						csv.addRow(info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity());												
 						monitor.worked(1);
 					}
