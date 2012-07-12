@@ -31,9 +31,7 @@ import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
 import ar.edu.unicen.ccm.WeightFactors;
-import ar.edu.unicen.ccm.bcs.abstractmethod.MethodWeightStrategy;
 import ar.edu.unicen.ccm.model.CostModel;
-import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class WCCVisitor extends ASTVisitor {
 	public BigInteger cost;
@@ -180,6 +178,11 @@ public class WCCVisitor extends ASTVisitor {
 			cost = cost.add(WeightFactors.methodCallWeight());
 			return true;
 		} else {
+			/**
+			 * @author mcrasso To account external calls per method
+			 */
+			this.currentMethod.incExternalCalls();
+			/**/
 			MethodSignature targetSignature = MethodSignature.from(mb);
 			if (isUserDefined(targetSignature)) {
 				if (stack.contains(targetSignature)) {
@@ -197,8 +200,7 @@ public class WCCVisitor extends ASTVisitor {
 						expr.append(" +").append(WeightFactors.methodCallWeight()).append("+");
 						BigInteger abstractCost = abstractImplementationCost(mb);
 						cost = cost.add(abstractCost.add(WeightFactors.methodCallWeight()));
-					} else {
-						
+					} else {						
 						BigInteger methodCost = methodCost(targetSignature);
 						expr.append(" +").append(invFactor).
 							append(" + [").append(methodCost).append("]");
