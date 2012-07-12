@@ -6,7 +6,7 @@ public class HierarchyComplexityInfo {
 
 	int depth = 0;
 	int classes = 0;
-	BigInteger cost =BigInteger.valueOf(0);
+	BigInteger cost = BigInteger.valueOf(0);
 	String expr;
 	
 	public HierarchyComplexityInfo(BigInteger cost, int depth, int classes, String expr) {

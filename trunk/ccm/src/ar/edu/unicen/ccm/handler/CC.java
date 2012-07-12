@@ -1,6 +1,8 @@
 package ar.edu.unicen.ccm.handler;
 
 import java.math.BigInteger;
+import java.util.Collection;
+import java.util.Vector;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -22,7 +24,7 @@ import ar.edu.unicen.ccm.out.CSVWriter;
 
 /**
  * This is the hanlder invoked when the user activate the
- * menu un the package explorer.  
+ * menu in the package explorer.  
  * @author pablo
  *
  */
@@ -64,19 +66,27 @@ public class CC extends AbstractHandler {
 					}
 					
 					csv.save();
-
+					
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
-							"Class", "Superclass", "# methods", "# attributes",  "Weight");
+							"Class", "Superclass", "# methods", "AC",  "WCC", "CC");
+					Collection<IType> superclasses = new Vector<IType>();
 					for(IType t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
 						IType superClassType = cm.getDependencyModel().getSuperClass(t);
 						String superclass = (superClassType != null) ? superClassType.getFullyQualifiedName('.') : "java.lang.Object";
-						csv.addRow(info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity());												
+						HierarchyComplexityInfo cost = cm.hierarchyCostOf(info.getName());						
+						csv.addRow(info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity(), cost.getCost());						
+						if (!superclasses.contains(superClassType))
+							superclasses.add(superClassType);
+						monitor.worked(1);
+					}
+					for (IType iType : superclasses) {
+						csv.addRow(iType.getFullyQualifiedName('.'), "LEGACY", "10", "10", "1","1");
 						monitor.worked(1);
 					}
 					csv.save();
 
-					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "Hierarchy", "Weight", "#classes", "depth", "expr");
+					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "Hierarchy", "CC", "#classes", "depth", "expr");
 					BigInteger totalCost = BigInteger.valueOf(0);
 					int classes = 0;
 					int max_depth = 0;
