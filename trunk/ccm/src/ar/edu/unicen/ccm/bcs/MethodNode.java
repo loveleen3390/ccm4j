@@ -9,7 +9,6 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 
 import ar.edu.unicen.ccm.model.CostModel;
-import ar.edu.unicen.ccm.model.DependencyModel;
 
 public class MethodNode {
 	//this is used as the key to lookup methods in the graph
@@ -27,6 +26,19 @@ public class MethodNode {
 	String expr;
 	
 	boolean recursive;
+	
+	/**
+	 * @author mcrasso To account external calls per method 
+	 */
+	private int externalCalls;
+	
+	public void incExternalCalls() {
+		this.externalCalls++;
+	}
+	
+	public int getExternalCalls() {
+		return externalCalls;
+	}
 	
 	public MethodNode(MethodDeclaration md, CostModel costModel, Map<MethodSignature, MethodNode> map) {
 		this.methodSignature = MethodSignature.from(md.resolveBinding());
@@ -64,7 +76,9 @@ public class MethodNode {
 		}
 	}
 	
-	
+	public CostModel getCostModel() {
+		return costModel;
+	}
 	
 	private BigInteger calculateCost(Stack<MethodSignature> callStack) {
 		IMethodBinding mb = md.resolveBinding();

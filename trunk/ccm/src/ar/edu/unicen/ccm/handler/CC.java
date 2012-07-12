@@ -55,12 +55,12 @@ public class CC extends AbstractHandler {
 					CostModel cm = new CostModel(project);
 					int totalWork = cm.getTypes().size() +	 cm.getDependencyModel().getMethods().size() + cm.getDependencyModel().getRootClasses().size();
 					monitor.beginTask("Calculating ..", totalWork);
-
-					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "Method", "Weight", "Weight Expression");
+					int i = 1;
+					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "ID", "Method", "Weight", "Weight Expression", "External Calls");
 					for(IType t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
 						for (MethodNode mn:  info.getMethods().values()) {
-							csv.addRow(mn.getSignature(), mn.getCost(), mn.getExpr());
+							csv.addRow(i++, mn.getSignature(), mn.getCost(), mn.getExpr(), mn.getExternalCalls());
 							monitor.worked(1);
 						}
 					}
@@ -68,37 +68,39 @@ public class CC extends AbstractHandler {
 					csv.save();
 					
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
-							"Class", "Superclass", "# methods", "AC",  "WCC", "CC");
+							"ID", "Class", "Superclass", "# methods", "AC",  "WCC", "CC");
 					Collection<IType> superclasses = new Vector<IType>();
+					i = 1;
 					for(IType t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
 						IType superClassType = cm.getDependencyModel().getSuperClass(t);
 						String superclass = (superClassType != null) ? superClassType.getFullyQualifiedName('.') : "java.lang.Object";
 						HierarchyComplexityInfo cost = cm.hierarchyCostOf(info.getName());						
-						csv.addRow(info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity(), cost.getCost());						
+						csv.addRow(i++,info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity(), cost.getCost());						
 						if (!superclasses.contains(superClassType))
 							superclasses.add(superClassType);
 						monitor.worked(1);
 					}
 					for (IType iType : superclasses) {
-						csv.addRow(iType.getFullyQualifiedName('.'), "LEGACY", "10", "10", "1","1");
+						csv.addRow(i++, iType.getFullyQualifiedName('.'), "LEGACY", "10", "10", "1","1");
 						monitor.worked(1);
 					}
 					csv.save();
 
-					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "Hierarchy", "CC", "#classes", "depth", "expr");
+					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "ID", "Hierarchy", "CC", "#classes", "depth", "expr");
+					i = 1;
 					BigInteger totalCost = BigInteger.valueOf(0);
 					int classes = 0;
 					int max_depth = 0;
 					for(String root : cm.getDependencyModel().getRootClasses()) {
 						HierarchyComplexityInfo cost = cm.hierarchyCostOf(root);
-						csv.addRow(root, cost.getCost(), cost.getClasses(), cost.getDepth(), cost.getExpr());
+						csv.addRow(i++, root, cost.getCost(), cost.getClasses(), cost.getDepth(), cost.getExpr());
 						totalCost = totalCost.add(cost.getCost());
 						max_depth = Math.max(max_depth, cost.getDepth());
 						classes += cost.getClasses();
 						monitor.worked(1);
 					}
-					csv.addRow("TOTAL", totalCost, classes, max_depth, "-");
+					csv.addRow(i++, "TOTAL", totalCost, classes, max_depth, "-");
 					csv.save();
 
 				} catch (Exception e ) {
