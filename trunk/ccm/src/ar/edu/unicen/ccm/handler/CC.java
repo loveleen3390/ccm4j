@@ -56,7 +56,7 @@ public class CC extends AbstractHandler {
 					int totalWork = cm.getTypes().size() +	 cm.getDependencyModel().getMethods().size() + cm.getDependencyModel().getRootClasses().size();
 					monitor.beginTask("Calculating ..", totalWork);
 					int i = 1;
-					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "ID", "Method", "Weight", "Weight Expression", "External Calls");
+					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "id", "method", "weight", "weightExpression", "externalCalls");
 					for(IType t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
 						for (MethodNode mn:  info.getMethods().values()) {
@@ -68,7 +68,7 @@ public class CC extends AbstractHandler {
 					csv.save();
 					
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
-							"ID", "Class", "Superclass", "# methods", "AC",  "WCC", "CC");
+							"id", "class", "superclass", "numberOfMethods", "ac",  "wcc", "cc");
 					Collection<IType> superclasses = new Vector<IType>();
 					i = 1;
 					for(IType t : cm.getTypes()) {
@@ -87,7 +87,7 @@ public class CC extends AbstractHandler {
 					}
 					csv.save();
 
-					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "ID", "Hierarchy", "CC", "#classes", "depth", "expr");
+					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "id", "hierarchy", "cc", "numberOfClasses", "depth", "expression");
 					i = 1;
 					BigInteger totalCost = BigInteger.valueOf(0);
 					int classes = 0;
