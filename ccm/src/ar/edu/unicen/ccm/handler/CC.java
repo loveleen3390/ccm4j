@@ -68,7 +68,7 @@ public class CC extends AbstractHandler {
 					csv.save();
 					
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
-							"id", "class", "superclass", "numberOfMethods", "ac",  "wcc", "cc");
+							"id", "className", "superClassName", "numberOfMethods", "ac",  "wcc", "cc");
 					Collection<IType> superclasses = new Vector<IType>();
 					i = 1;
 					for(IType t : cm.getTypes()) {
