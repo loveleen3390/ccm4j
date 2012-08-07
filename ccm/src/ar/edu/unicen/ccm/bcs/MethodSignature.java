@@ -35,21 +35,22 @@ public class MethodSignature {
 	}
 	
 	public static MethodSignature from(IMethodBinding mb) {
-		String clazz = mb.getDeclaringClass().getQualifiedName();
+		String clazz = mb.getDeclaringClass().getBinaryName();
 		String name = mb.getName();
 		Object[] params = Utils.map(mb.getParameterTypes(), new MapFun() {
 			public Object map(Object item) {
 				ITypeBinding tb = (ITypeBinding) item;
-				return tb.getQualifiedName();
+				return tb.getBinaryName();
 			}
 		});
 		return calculateId(clazz, name, params);
 	}
+	
 	public static MethodSignature from(String clazz, String name, ITypeBinding[] parameters) {
 		Object[] params = Utils.map(parameters, new MapFun() {
 			public Object map(Object item) {
 				ITypeBinding tb = (ITypeBinding) item;
-				return tb.getQualifiedName();
+				return tb.getBinaryName();
 			}
 		});
 		return calculateId(clazz, name, params);

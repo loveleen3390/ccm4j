@@ -13,6 +13,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
@@ -20,11 +21,12 @@ import ar.edu.unicen.ccm.bcs.MethodNode;
 import ar.edu.unicen.ccm.model.ClassComplexityInfo;
 import ar.edu.unicen.ccm.model.CostModel;
 import ar.edu.unicen.ccm.model.HierarchyComplexityInfo;
+import ar.edu.unicen.ccm.model.adapter.TypeAdapter;
 import ar.edu.unicen.ccm.out.CSVWriter;
 
 /**
- * This is the hanlder invoked when the user activate the
- * menu in the package explorer.  
+ * This is the handler invoked when the user activate the
+ * menu on the package explorer.  
  * @author pablo
  *
  */
@@ -57,8 +59,8 @@ public class CC extends AbstractHandler {
 					monitor.beginTask("Calculating ..", totalWork);
 					int i = 1;
 					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "id", "method", "weight", "weightExpression", "externalCalls");
-					for(IType t : cm.getTypes()) {
-						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
+					for(TypeAdapter t : cm.getTypes()) {
+						ClassComplexityInfo info = cm.getClassComplexityInfo(t.FQName());
 						for (MethodNode mn:  info.getMethods().values()) {
 							csv.addRow(i++, mn.getSignature(), mn.getCost(), mn.getExpr(), mn.getExternalCalls());
 							monitor.worked(1);
@@ -69,20 +71,22 @@ public class CC extends AbstractHandler {
 					
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
 							"id", "className", "superClassName", "numberOfMethods", "ac",  "wcc", "cc");
-					Collection<IType> superclasses = new Vector<IType>();
+					Collection<String> superclasses = new Vector<String>();
 					i = 1;
-					for(IType t : cm.getTypes()) {
-						ClassComplexityInfo info = cm.getClassComplexityInfo(t.getFullyQualifiedName('.'));
-						IType superClassType = cm.getDependencyModel().getSuperClass(t);
-						String superclass = (superClassType != null) ? superClassType.getFullyQualifiedName('.') : "java.lang.Object";
+					for(TypeAdapter t : cm.getTypes()) {
+						ClassComplexityInfo info = cm.getClassComplexityInfo(t.FQName());
+						ITypeBinding superClassType = t.getSuperClass();
+						String superclass = (superClassType != null) ? superClassType.getBinaryName() : "java.lang.Object";
 						HierarchyComplexityInfo cost = cm.hierarchyCostOf(info.getName());						
 						csv.addRow(i++,info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity(), cost.getCost());						
-						if (!superclasses.contains(superClassType))
-							superclasses.add(superClassType);
+						if (!superclasses.contains(superclass))
+							superclasses.add(superclass);
 						monitor.worked(1);
 					}
-					for (IType iType : superclasses) {
-						csv.addRow(i++, iType.getFullyQualifiedName('.'), "LEGACY", "10", "10", "1","1");
+					for (String iType : superclasses) {
+						
+							
+						csv.addRow(i++, iType, "LEGACY", "10", "10", "1","1");
 						monitor.worked(1);
 					}
 					csv.save();
