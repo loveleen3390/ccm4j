@@ -18,6 +18,7 @@ import ar.edu.unicen.ccm.bcs.MethodNode;
 import ar.edu.unicen.ccm.bcs.MethodSignature;
 import ar.edu.unicen.ccm.bcs.abstractmethod.AverageWeightStrategy;
 import ar.edu.unicen.ccm.bcs.abstractmethod.MethodWeightStrategy;
+import ar.edu.unicen.ccm.model.adapter.TypeAdapter;
 import ar.edu.unicen.ccm.utils.Utils;
 
 public class CostModel {
@@ -45,7 +46,7 @@ public class CostModel {
 		return dep;
 	}
 	
-	public Collection<IType> getTypes() throws JavaModelException {
+	public Collection<TypeAdapter> getTypes() throws JavaModelException {
 		return dep.getTypes();
 	}
 	
@@ -61,8 +62,8 @@ public class CostModel {
 			this.methodComplexity.put(signature,new MethodNode(md, this, this.methodComplexity));
 		}
 		
-		for (IType t : getTypes()) {
-			this.weightedClassComplexity.put(t.getFullyQualifiedName('.'),
+		for (TypeAdapter t : getTypes()) {
+			this.weightedClassComplexity.put(t.FQName(),
 					calculateWeightedClassComplexity(t));
 		}
 	}
@@ -71,16 +72,16 @@ public class CostModel {
 		return this.weightedClassComplexity.get(type);
 	}
 	
-	private ClassComplexityInfo calculateWeightedClassComplexity(IType typeHandle) throws JavaModelException {
+	private ClassComplexityInfo calculateWeightedClassComplexity(TypeAdapter type) throws JavaModelException {
 		
-		TypeDeclaration typeDecl = Utils.findType(typeHandle);
+		//TypeDeclaration typeDecl = Utils.findType(typeHandle);
 		
 		Map<MethodSignature, MethodNode> methods = new HashMap<MethodSignature, MethodNode>();
-		for (MethodDeclaration m : typeDecl.getMethods()) {
+		for (MethodDeclaration m : type.getMethods()) {
 			MethodSignature signature = MethodSignature.from(m.resolveBinding());
 			methods.put(signature,  getMethodComplexity(signature));
 		}
-		return new ClassComplexityInfo(typeHandle.getFullyQualifiedName('.'),typeHandle.getFields().length , methods);
+		return new ClassComplexityInfo(type.FQName(),type.fieldsCount() , methods);
 		
 	}
 	
@@ -96,7 +97,7 @@ public class CostModel {
 		//If a class has "0" complexity, its hierarchy weight would be "0" too because
 		//we multiply it. I think that's not the intended result, so here we force it to
 		//1 on those cases.
-		
+		System.out.println("Calculating hierarchy cost of " + baseClass);
 		BigInteger baseWeight =  getClassComplexityInfo(baseClass).getWeightedClassComplexity().max(BigInteger.valueOf(1)); 
 				
 		if (subtypes.isEmpty()) {

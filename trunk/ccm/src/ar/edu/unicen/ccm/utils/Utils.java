@@ -45,53 +45,7 @@ public class Utils {
 		return result;
 	}
 	
-	/* TODO: It won't work with anonymous classes.  
-	 * TODO: really inneficient, we are parsing the file again..
-	 */
-	public static TypeDeclaration findType(IType typeHandle) {
-		IJavaElement parent = typeHandle.getParent();
-		ASTParser parser = ASTParser.newParser(AST.JLS3);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setSource(typeHandle.getCompilationUnit()); // set source
-		parser.setResolveBindings(true); // we need bindings later
-											// on
-		CompilationUnit cu = (CompilationUnit) parser
-				.createAST(null); // parse
-		return findTypeInCU(cu, typeHandle);
-    }
-
-	 
-	private static TypeDeclaration findTypeInCU(CompilationUnit cu, IType typeHandle) {
-		Collection<TypeDeclaration> typesInCu = new LinkedList<TypeDeclaration>();
-		extractTypesFromCU(cu, typesInCu);
-		//TODO: buscar tambien en las clases anonimas..
-  	    int occurenceCount = ((SourceType)typeHandle).occurrenceCount;
-  	    boolean searchAnonymous =  typeHandle.getElementName().length() == 0;
-
-		for (TypeDeclaration t : typesInCu) {
-			String qn = t.resolveBinding().getQualifiedName();
-			if (qn.equals(typeHandle.getFullyQualifiedName('.')))
-				return	t;
-		}
-		return null;
-	}
-	
-
-	private static void extractTypesFromCU(CompilationUnit cu, Collection<TypeDeclaration> types) {
-		for (AbstractTypeDeclaration t : (List<AbstractTypeDeclaration>) cu.types()) {
-			extractTypesRecursive(t, types);
-		}
-	}
-	private static void extractTypesRecursive(AbstractTypeDeclaration t, Collection<TypeDeclaration> types) {
-		if (t.getNodeType() == AbstractTypeDeclaration.TYPE_DECLARATION) {
-			TypeDeclaration td = (TypeDeclaration) t;
-			types.add(td);
-			for (TypeDeclaration childType : td.getTypes())
-				extractTypesRecursive(childType, types);
-		}
-	}
-	
-	
+		
 	public static String[] readFile(IFile file) {
 		List<String> result = new LinkedList<String>();
 

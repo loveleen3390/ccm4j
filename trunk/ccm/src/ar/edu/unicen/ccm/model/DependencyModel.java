@@ -1,6 +1,8 @@
 package ar.edu.unicen.ccm.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,28 +21,37 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import ar.edu.unicen.ccm.bcs.MethodSignature;
+import ar.edu.unicen.ccm.model.adapter.TypeAdapter;
+import ar.edu.unicen.ccm.model.adapter.TypeDeclAdapter;
 import ar.edu.unicen.ccm.utils.Utils;
 
 public class DependencyModel {
 	IJavaProject project;
-	Collection<TypeDeclaration> types;
+	Collection<TypeAdapter> types;
 	Map<MethodSignature, MethodDeclaration> methods;
+	Map<String, Set<String>> hierarchy;
+	
 	Set<String> interfaces; 
 	ITypeHierarchy typeHierarchy;
 	Set<IPackageFragment> packages;
+	Set<String> packageStrings;
 	String[] rules;
 	
 	public DependencyModel(IJavaProject project) throws JavaModelException {
 		this.project = project;
 		IRegion region = JavaCore.newRegion();
 		this.packages = new HashSet<IPackageFragment>();
+		this.packageStrings = new HashSet<String>();
+		this.hierarchy = new HashMap<String,Set<String>>();
 		
 		 
 		this.rules = Utils.readFile(project.getProject().getFile("ccm4j.packages"));
@@ -50,13 +61,11 @@ public class DependencyModel {
 				if (isPkIncluded(pk)) {
 					region.add(pk);
 					packages.add(pk);
+					packageStrings.add(pk.getElementName());
 				}
 			}
 		}
 		this.typeHierarchy = project.newTypeHierarchy(region, null);
-		
-		 
-		
 		buildModel();
 	}
 	private boolean isPkIncluded(IPackageFragment pk) {
@@ -68,31 +77,29 @@ public class DependencyModel {
 	}
 	
 
-	public Collection<IType> getTypes() throws JavaModelException {
-		Collection<IType> r = new LinkedList<IType>();
-		// The typeHierarchy contains superclasses not in this project, for example
-		// Object
-		for (IType t : this.typeHierarchy.getAllClasses())
-			if (isClassInScope(t))
-				r.add(t);
-		return r;
+	public Collection<TypeAdapter> getTypes() throws JavaModelException {
+		return this.types;
 	}
 	public Collection<MethodDeclaration> getMethods() {
 		return methods.values();
 	}
 
+	private boolean isClassInScope(ITypeBinding t) {
+		return this.packageStrings.contains(t.getPackage().getName());
+	}
+	
 	private boolean isClassInScope(IType t) throws JavaModelException {
 		IPackageFragment p = t.getPackageFragment();
-		// TODO: we don't handle anonymous defined classes yet
-		return this.packages.contains(p) && !t.isAnonymous();
+		return this.packages.contains(p) ;
 	}
 	public Collection<String> getRootClasses() throws JavaModelException {
 		List<String> root = new LinkedList<String>();
-		for (IType c : this.typeHierarchy.getAllClasses()) {
-			IType superClass = this.typeHierarchy.getSuperclass(c);
-			if (isClassInScope(c) && !isClassInScope(superClass)) {
-				root.add(c.getFullyQualifiedName('.'));
-			} 
+		for (TypeAdapter ta : this.getTypes()) {
+			if (ta.isClass()) { 
+				ITypeBinding superClazz =	ta.getSuperClass();
+				if (! isClassInScope(superClazz))
+					root.add(ta.FQName());
+			}
 		}
 		return root;
 	}
@@ -121,20 +128,30 @@ public class DependencyModel {
 	 * @throws JavaModelException 
 	 */
 	public Set<String> getDirectSubtypes(String type) throws JavaModelException {
-		Set<String> result = new HashSet<String>();
+		/*Set<String> result = new HashSet<String>();
 		IType superType = this.project.findType(type); //maybe interface or class..
 		for (IType sub : this.typeHierarchy.getSubtypes(superType)) {
 			if (isClassInScope(sub))
-				result.add(sub.getFullyQualifiedName('.'));
+				result.add(sub.getFullyQualifiedName('$'));
 		}
+		*/
+		/*
+		// here seems to be a bug in eclipse.. if the subtype is anonymous,
+		// it allways returns the first anonymous class of the enclosing class,
+		// rather than the correct one.
+		// Example,  if the subclass is  a.b.C$2 , it will return a.b.C$1 anyway
+		 * For that reason we had our own hierarchy tree
+		*/
+		Set<String> result = this.hierarchy.get(type);
+		if (result == null)
+			result = Collections.EMPTY_SET;
 		return result;
 	}
 	
-	public IType getSuperClass(IType clazz) {
-		return this.typeHierarchy.getSuperclass(clazz);
-	}
+	
+	//TODO: see comment on getDirectSubtypes. That bug might impact here too.
 	public Set<MethodSignature> getImplementations(IMethodBinding mb) throws JavaModelException {
-		String type = mb.getDeclaringClass().getQualifiedName();
+		String type = mb.getDeclaringClass().getBinaryName();
 		Set<MethodSignature> result = new HashSet<MethodSignature>();
 		IType[] subtypes = getAllSubtypes(type);
 		for (IType t : subtypes) {
@@ -148,12 +165,12 @@ public class DependencyModel {
 			//		reducing memory and cpu consuption
 			IType toCheck = t;
 			while((toCheck != null) && isClassInScope(toCheck)) {
-				MethodSignature signature = MethodSignature.from(toCheck.getFullyQualifiedName('.'), mb.getName(),  mb.getParameterTypes());
+				MethodSignature signature = MethodSignature.from(toCheck.getFullyQualifiedName('$'), mb.getName(),  mb.getParameterTypes());
 				if (this.methods.containsKey(signature)) {
 					result.add(signature);
 					break;
 				}
-				toCheck = this.typeHierarchy.getSuperclass(toCheck);
+				toCheck =  this.typeHierarchy.getSuperclass(toCheck);
 			}
 
 		}
@@ -163,12 +180,13 @@ public class DependencyModel {
 
 	private void buildModel() throws JavaModelException {
 		this.types = extractTypes(project);
+		buildHierarchy();
 		this.methods = extractMethods(types);
 	}
 
-	private Map<MethodSignature, MethodDeclaration> extractMethods(Collection<TypeDeclaration> types) {
+	private Map<MethodSignature, MethodDeclaration> extractMethods(Collection<TypeAdapter> types) {
 		Map<MethodSignature,MethodDeclaration> result = new HashMap<MethodSignature,MethodDeclaration>();
-		for (TypeDeclaration t : types) {
+		for (TypeAdapter t : types) {
 			
 			for (MethodDeclaration md : t.getMethods()) {
 				result.put(MethodSignature.from(md.resolveBinding()), md);
@@ -177,9 +195,9 @@ public class DependencyModel {
 		return result;
 	}
 	
-	private Collection<TypeDeclaration> extractTypes(IJavaProject project)
+	private Collection<TypeAdapter> extractTypes(IJavaProject project)
 			throws JavaModelException {
-		Collection<TypeDeclaration> types = new LinkedList<TypeDeclaration>();
+		TypeExtractor visitor = new TypeExtractor();
 		// find all declared types (including nested ones)
 		for (IPackageFragment pk : this.packages) {
 			if (pk.getKind() == IPackageFragmentRoot.K_SOURCE)
@@ -191,25 +209,26 @@ public class DependencyModel {
 														// on
 					CompilationUnit cu = (CompilationUnit) parser
 							.createAST(null ); // IProgressMonitor 
-					extractTypesFromCU(cu, types);
+					cu.accept(visitor);
 				}
 		}
-		return types;
+		return visitor.getTypes();
 	}
 
 
-	private void extractTypesFromCU(CompilationUnit cu, Collection<TypeDeclaration> types) {
-		for (AbstractTypeDeclaration t : (List<AbstractTypeDeclaration>) cu.types()) {
-			extractTypesRecursive(t, types);
+	private void buildHierarchy() {
+		for (TypeAdapter t : this.types) {
+			if (t.isClass())
+				registerSubclass(t.getSuperClass().getBinaryName(), t.FQName());
 		}
 	}
-	private void extractTypesRecursive(AbstractTypeDeclaration t, Collection<TypeDeclaration> types) {
-		if (t.getNodeType() == AbstractTypeDeclaration.TYPE_DECLARATION) {
-			TypeDeclaration td = (TypeDeclaration) t;
-			types.add((TypeDeclaration) t);
-			for (TypeDeclaration childType : td.getTypes())
-				extractTypesRecursive(childType, types);
+	private void registerSubclass(String superClass, String sub) {
+		Set<String> childs = this.hierarchy.get(superClass);
+		if (childs == null) {
+			childs = new HashSet();
+			this.hierarchy.put(superClass, childs);
 		}
+		childs.add(sub);
 	}
 
 }
