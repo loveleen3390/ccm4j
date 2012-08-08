@@ -12,12 +12,15 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 public class AnonymousTypeAdapter implements TypeAdapter {
 	AnonymousClassDeclaration clazz;
 	String FQName;
+	ITypeBinding binding;
+	
 	
 
 	public AnonymousTypeAdapter(AnonymousClassDeclaration clazz, TypeDeclaration parent, int pos) {
 		this.clazz = clazz;
 		//this.FQName = parent.resolveBinding().getQualifiedName() + "$" + pos;
 		this.FQName = clazz.resolveBinding().getBinaryName();
+		this.binding = clazz.resolveBinding();
 	}
 	
 	@Override
@@ -31,7 +34,7 @@ public class AnonymousTypeAdapter implements TypeAdapter {
 
 	@Override
 	public ITypeBinding getBinding() {
-		return clazz.resolveBinding();
+		return binding;
 	}
 	
 	public String FQName() {
@@ -52,6 +55,6 @@ public class AnonymousTypeAdapter implements TypeAdapter {
 	}
 	
 	public ITypeBinding getSuperClass() {
-		return this.clazz.resolveBinding().getSuperclass();
+		return this.getBinding().getSuperclass();
 	}
 }
