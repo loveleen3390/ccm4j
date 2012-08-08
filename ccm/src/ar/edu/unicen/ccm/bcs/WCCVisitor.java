@@ -11,6 +11,7 @@ import java.util.Stack;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -143,6 +144,10 @@ public class WCCVisitor extends ASTVisitor {
 		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
 	}
 		
+	@Override
+	public boolean visit(AnonymousClassDeclaration node) {
+		return false; // do not enter, anonymous classes are handled separately
+	}
 	
 	private boolean visitNestedStruct(BigInteger factor, ASTNode[] linearStatements, Statement[] nested) {
 		WCCVisitor childVisitor = newChildVisitor();
