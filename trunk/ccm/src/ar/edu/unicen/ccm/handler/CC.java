@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -32,6 +33,24 @@ import ar.edu.unicen.ccm.out.CSVWriter;
  */
 public class CC extends AbstractHandler {
 
+	class WriterJob extends Job {
+		CSVWriter writer;
+		WriterJob(String jobName, CSVWriter writer) {
+			super(jobName);
+			this.writer = writer;
+		}
+		@Override
+		protected IStatus run(IProgressMonitor arg0) {
+			try {
+				writer.save();
+				return Status.OK_STATUS;
+			} catch (CoreException e) {
+				e.printStackTrace();
+				return Status.CANCEL_STATUS;
+			}
+		}
+	}
+	
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IStructuredSelection selection = (IStructuredSelection) HandlerUtil.getActiveMenuSelection(event);
@@ -54,6 +73,7 @@ public class CC extends AbstractHandler {
 					//TODO: most of the time is spent on parsing all the java source files
 					//      rather than on analyzing it.  So we I need a better way to show the progress
 					//      maybe by first counting the files and report progression based on that.
+					long startTime = System.currentTimeMillis();
 					CostModel cm = new CostModel(project);
 					int totalWork = cm.getTypes().size() +	 cm.getDependencyModel().getMethods().size() + cm.getDependencyModel().getRootClasses().size();
 					monitor.beginTask("Calculating ..", totalWork);
@@ -66,8 +86,10 @@ public class CC extends AbstractHandler {
 							monitor.worked(1);
 						}
 					}
+					WriterJob w1 = new WriterJob("Writing mc.csv",csv);
+					w1.schedule();
 					
-					csv.save();
+					
 					
 					csv = new CSVWriter(project.getProject(), "wcc.csv", 
 							"id", "className", "superClassName", "numberOfMethods", "ac",  "wcc", "cc");
@@ -89,7 +111,10 @@ public class CC extends AbstractHandler {
 						csv.addRow(i++, iType, "LEGACY", "10", "10", "1","1");
 						monitor.worked(1);
 					}
-					csv.save();
+					WriterJob w2 = new WriterJob("Writing wcc.csv",csv);
+					w2.schedule();
+					
+					
 
 					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "id", "hierarchy", "cc", "numberOfClasses", "depth", "expression");
 					i = 1;
@@ -105,7 +130,15 @@ public class CC extends AbstractHandler {
 						monitor.worked(1);
 					}
 					csv.addRow(i++, "TOTAL", totalCost, classes, max_depth, "-");
-					csv.save();
+					WriterJob w3 = new WriterJob("Writing code_complexity.csv",csv);
+					w3.schedule();
+					
+					w1.join();
+					w2.join();
+					w3.join();
+					
+					long endTime = System.currentTimeMillis();
+					System.out.println("Runtime: " + (endTime - startTime) / 1000);
 
 				} catch (Exception e ) {
 					e.printStackTrace();
@@ -118,6 +151,7 @@ public class CC extends AbstractHandler {
 		};
 		job.setUser(true);
 		job.schedule();
+		
 	}
 
 
