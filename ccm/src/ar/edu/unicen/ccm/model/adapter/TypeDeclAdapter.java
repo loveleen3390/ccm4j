@@ -6,9 +6,13 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 public class TypeDeclAdapter implements TypeAdapter {
 	TypeDeclaration decl;
+	ITypeBinding binding;
+	String fqName;
 	
 	public TypeDeclAdapter(TypeDeclaration decl) {
 		this.decl = decl;
+		this.binding = decl.resolveBinding();
+		this.fqName = binding.getBinaryName();
 	}
 	
 	@Override
@@ -17,15 +21,14 @@ public class TypeDeclAdapter implements TypeAdapter {
 		return decl.getMethods();
 	}
 
-	@Override
+@Override
 	public ITypeBinding getBinding() {
-		// TODO Auto-generated method stub
-		return decl.resolveBinding();
-	}
+		return binding;
+	}	
 
 	@Override
 	public String FQName() {
-		return decl.resolveBinding().getBinaryName();
+		return fqName;
 	}
 	@Override
 	public int fieldsCount() {
@@ -37,6 +40,6 @@ public class TypeDeclAdapter implements TypeAdapter {
 	}
 	
 	public ITypeBinding getSuperClass() {
-		return this.decl.resolveBinding().getSuperclass();
+		return getBinding().getSuperclass();
 	}
 }

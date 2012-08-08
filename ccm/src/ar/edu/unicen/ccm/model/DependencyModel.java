@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
@@ -187,7 +188,6 @@ public class DependencyModel {
 	private Map<MethodSignature, MethodDeclaration> extractMethods(Collection<TypeAdapter> types) {
 		Map<MethodSignature,MethodDeclaration> result = new HashMap<MethodSignature,MethodDeclaration>();
 		for (TypeAdapter t : types) {
-			
 			for (MethodDeclaration md : t.getMethods()) {
 				result.put(MethodSignature.from(md.resolveBinding()), md);
 			}
@@ -225,7 +225,7 @@ public class DependencyModel {
 	private void registerSubclass(String superClass, String sub) {
 		Set<String> childs = this.hierarchy.get(superClass);
 		if (childs == null) {
-			childs = new HashSet();
+			childs = new TreeSet<String>();
 			this.hierarchy.put(superClass, childs);
 		}
 		childs.add(sub);
