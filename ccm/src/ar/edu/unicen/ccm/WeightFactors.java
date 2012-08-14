@@ -40,6 +40,11 @@ public class WeightFactors {
 		return get(PreferenceConstants.P_TRY_FACTOR);
 	}
 	
+	public static BigInteger libraryCallWeight() {
+		return get(PreferenceConstants.P_LIBRARY_CALL_WEIGHT);
+		
+	}
+	
 	private static BigInteger get(String key) {
 		return BigInteger.valueOf(Activator.getDefault().getPreferenceStore().getInt(key));
 	}
@@ -49,6 +54,8 @@ public class WeightFactors {
 		String clazz = Activator.getDefault().getPreferenceStore().getString(PreferenceConstants.P_STRATEGY);
 		return (MethodWeightStrategy)Class.forName(clazz).newInstance();
 	}
+
+	
 
 	
 	

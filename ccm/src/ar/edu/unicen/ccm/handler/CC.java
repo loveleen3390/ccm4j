@@ -129,7 +129,7 @@ public class CC extends AbstractHandler {
 						monitor.worked(1);
 					}
 					csv.addRow(i++, "TOTAL", totalCost, classes, max_depth, "-");
-					WriterJob w3 = new WriterJob("Writing code_complexity.csv",csv);
+					WriterJob w3 = new WriterJob("Writing cc.csv",csv);
 					w3.schedule();
 					
 					w1.join();
