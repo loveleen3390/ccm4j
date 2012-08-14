@@ -185,8 +185,11 @@ public class WCCVisitor extends ASTVisitor {
 
 	
 	public boolean doVisitMethodInvocation(ITypeBinding obj, IMethodBinding mb, BigInteger invFactor) {
-		if (obj.equals(this.currentType)) {  //TODO con que obj sea superclase de this.currentType alcanza
-			//local calls
+		if (this.currentType.isAssignmentCompatible(obj) &&  !obj.isInterface()) {
+			// obj (invoked object) is superclass of the current class whose method we are analyzing.
+			// (for that we check that obj is not an interface, as interfaces can have multiple implementations) 
+
+			//it has the cost of a local calls
 			expr.append("+" +WeightFactors.methodCallWeight());
 			cost = cost.add(WeightFactors.methodCallWeight());
 			return true;
