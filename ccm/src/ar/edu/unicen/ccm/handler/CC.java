@@ -13,7 +13,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
@@ -116,7 +115,7 @@ public class CC extends AbstractHandler {
 					
 					
 
-					csv = new CSVWriter(project.getProject(), "code_complexity.csv", "id", "hierarchy", "cc", "numberOfClasses", "depth", "expression");
+					csv = new CSVWriter(project.getProject(), "cc.csv", "id", "hierarchy", "cc", "numberOfClasses", "depth", "expression");
 					i = 1;
 					BigInteger totalCost = BigInteger.valueOf(0);
 					int classes = 0;
