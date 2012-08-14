@@ -138,7 +138,7 @@ public class CC extends AbstractHandler {
 					w3.join();
 					
 					long endTime = System.currentTimeMillis();
-					System.out.println("Runtime: " + (endTime - startTime) / 1000);
+					System.out.println("Runtime: " + (endTime - startTime) / 1000.0);
 
 				} catch (Exception e ) {
 					e.printStackTrace();

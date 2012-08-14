@@ -229,7 +229,7 @@ public class WCCVisitor extends ASTVisitor {
 	private BigInteger abstractImplementationCost(IMethodBinding mb) {
 		Set<MethodSignature> implementations = getImplementationsOf(mb);
 		if (implementations.isEmpty()) {
-			System.out.println("Warnning " + MethodSignature.from(mb) + " doesn't have implementations");
+			//System.out.println("Warnning " + MethodSignature.from(mb) + " doesn't have implementations");
 			return BigInteger.valueOf(0); //patological case
 		} else {
 			List<BigInteger> costs = new LinkedList<BigInteger>();
