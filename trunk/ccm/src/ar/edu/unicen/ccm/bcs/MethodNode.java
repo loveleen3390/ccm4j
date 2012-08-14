@@ -70,8 +70,10 @@ public class MethodNode {
 			return this.cost;
 		} else {
 			BigInteger calculatedCost = calculateCost(callStack);
-			if (!this.recursive)  //recursive methods aren't memorized, explain why latter
+			if (!this.recursive) { //recursive methods aren't memorized, explain why latter
 				this.cost = calculatedCost;
+				this.md = null; //we won't use it anymore
+			}
 			return calculatedCost;
 		}
 	}
