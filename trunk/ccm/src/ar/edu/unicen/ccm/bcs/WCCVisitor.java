@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -39,12 +40,14 @@ public class WCCVisitor extends ASTVisitor {
 	CostModel costModel;
 	Map<MethodSignature, MethodNode> methodMap;
 	MethodNode currentMethod;
+	ITypeBinding currentType;
 	StringBuilder expr;
 	Stack<MethodSignature> stack;
 	
 	public WCCVisitor(MethodNode currentMethod, CostModel costModel, Map<MethodSignature, MethodNode> methodMap,  Stack<MethodSignature> stack) {
 		this.cost = BigInteger.valueOf(0);
 		this.currentMethod = currentMethod;
+		this.currentType = currentMethod.md.resolveBinding().getDeclaringClass();
 		this.costModel = costModel;
 		this.methodMap = methodMap;
 		this.expr = new StringBuilder();
@@ -116,7 +119,7 @@ public class WCCVisitor extends ASTVisitor {
 	public boolean visit(ConstructorInvocation node) {
 		//these are  this() calls
 		IMethodBinding mb = node.resolveConstructorBinding();
-		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
+		return doVisitMethodInvocation(mb.getDeclaringClass(), mb, WeightFactors.methodCallWeight());
 	}
 	
 	@Override
@@ -135,13 +138,19 @@ public class WCCVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		IMethodBinding mb = node.resolveConstructorBinding();
-		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
+		return doVisitMethodInvocation(node.resolveTypeBinding(), mb, WeightFactors.methodCallWeight());
 	}
+	
 	
 	@Override
 	public boolean visit(MethodInvocation node) {
 		IMethodBinding mb = node.resolveMethodBinding();
-		return doVisitMethodInvocation(mb, WeightFactors.methodCallWeight());
+		ITypeBinding obj;
+		if (node.getExpression() != null)
+			obj = node.getExpression().resolveTypeBinding();  //target of the method invocation
+		else
+			obj = currentType;  //no expression,  implicit "this."
+		return doVisitMethodInvocation(obj, mb, WeightFactors.methodCallWeight());
 	}
 		
 	@Override
@@ -175,9 +184,8 @@ public class WCCVisitor extends ASTVisitor {
 	}
 
 	
-	public boolean doVisitMethodInvocation(IMethodBinding mb, BigInteger invFactor) {
-		if (mb.getDeclaringClass()  ==
-				this.currentMethod.md.resolveBinding().getDeclaringClass() ) {
+	public boolean doVisitMethodInvocation(ITypeBinding obj, IMethodBinding mb, BigInteger invFactor) {
+		if (obj.equals(this.currentType)) {  //TODO con que obj sea superclase de this.currentType alcanza
 			//local calls
 			expr.append("+" +WeightFactors.methodCallWeight());
 			cost = cost.add(WeightFactors.methodCallWeight());
