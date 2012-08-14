@@ -119,26 +119,24 @@ public class WCCVisitor extends ASTVisitor {
 	public boolean visit(ConstructorInvocation node) {
 		//these are  this() calls
 		IMethodBinding mb = node.resolveConstructorBinding();
-		return doVisitMethodInvocation(mb.getDeclaringClass(), mb, WeightFactors.methodCallWeight());
+		return doVisitMethodInvocation(mb.getDeclaringClass(), mb);
 	}
 	
 	@Override
 	public boolean visit(SuperConstructorInvocation node) {
-		expr.append("+" +WeightFactors.methodCallWeight());
-		cost = cost.add(WeightFactors.methodCallWeight());
-		return true;
+		IMethodBinding mb = node.resolveConstructorBinding();
+		return doVisitConstructorInvocation(mb.getDeclaringClass(), mb);
 	}
 	
 	public boolean visit(SuperMethodInvocation node) {
-		expr.append("+" +WeightFactors.methodCallWeight());
-		cost = cost.add(WeightFactors.methodCallWeight());
-		return true;
+		IMethodBinding mb = node.resolveMethodBinding();
+		return doVisitMethodInvocation(mb.getDeclaringClass(), mb);
 	}
 	
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		IMethodBinding mb = node.resolveConstructorBinding();
-		return doVisitMethodInvocation(node.resolveTypeBinding(), mb, WeightFactors.methodCallWeight());
+		return doVisitConstructorInvocation(node.resolveTypeBinding(), mb);
 	}
 	
 	
@@ -150,7 +148,7 @@ public class WCCVisitor extends ASTVisitor {
 			obj = node.getExpression().resolveTypeBinding();  //target of the method invocation
 		else
 			obj = currentType;  //no expression,  implicit "this."
-		return doVisitMethodInvocation(obj, mb, WeightFactors.methodCallWeight());
+		return doVisitMethodInvocation(obj, mb);
 	}
 		
 	@Override
@@ -183,15 +181,27 @@ public class WCCVisitor extends ASTVisitor {
 		return false;
 	}
 
+	private boolean isSuperClass(ITypeBinding obj) {
+		return this.currentType.isAssignmentCompatible(obj) &&  !obj.isInterface();
+	}
 	
-	public boolean doVisitMethodInvocation(ITypeBinding obj, IMethodBinding mb, BigInteger invFactor) {
-		if (this.currentType.isAssignmentCompatible(obj) &&  !obj.isInterface()) {
+	public boolean doVisitConstructorInvocation(ITypeBinding obj, IMethodBinding mb) {
+		if (!mb.isDefaultConstructor()) { //default constructors carry no complexity weight
+			return doVisitMethodInvocation(obj, mb); //same cost than a normal invocation
+		}
+		return true;
+	}
+			
+		
+	public boolean doVisitMethodInvocation(ITypeBinding obj, IMethodBinding mb) {
+		BigInteger methodCallWeight = WeightFactors.methodCallWeight();
+		if (isSuperClass(obj) ) {
 			// obj (invoked object) is superclass of the current class whose method we are analyzing.
 			// (for that we check that obj is not an interface, as interfaces can have multiple implementations) 
 
 			//it has the cost of a local calls
-			expr.append("+" +WeightFactors.methodCallWeight());
-			cost = cost.add(WeightFactors.methodCallWeight());
+			expr.append("+" +methodCallWeight);
+			cost = cost.add(methodCallWeight);
 			return true;
 		} else {
 			/**
@@ -207,26 +217,29 @@ public class WCCVisitor extends ASTVisitor {
 						MethodNode target = this.methodMap.get(m);
 						target.setRecursive();
 					}
-
-					expr.append("+" +WeightFactors.recursiveCalllWeight());
-					cost = cost.add(WeightFactors.recursiveCalllWeight());
+					BigInteger recurWeight = WeightFactors.recursiveCalllWeight();
+					expr.append("+" +recurWeight);
+					cost = cost.add(recurWeight);
 				} else {
 					stack.add(targetSignature);
 					if (Modifier.isAbstract(mb.getModifiers())) {
-						expr.append(" +").append(WeightFactors.methodCallWeight()).append("+");
+						expr.append(" +").append(methodCallWeight).append("+");
 						BigInteger abstractCost = abstractImplementationCost(mb);
-						cost = cost.add(abstractCost.add(WeightFactors.methodCallWeight()));
+						cost = cost.add(abstractCost.add(methodCallWeight));
 					} else {						
 						BigInteger methodCost = methodCost(targetSignature);
-						expr.append(" +").append(invFactor).
+						expr.append(" +").append(methodCallWeight).
 							append(" + [").append(methodCost).append("]");
-						cost = cost.add(methodCost.add(invFactor));
+						cost = cost.add(methodCost.add(methodCallWeight));
 					}
 					MethodSignature pop = this.stack.pop();
 					if (targetSignature != pop)
 						System.out.println("Error!: ms: " + targetSignature + "  pop:" + pop);
 
 				}
+			} else {
+				expr.append("+ " + methodCallWeight + "+[" + WeightFactors.libraryCallWeight() +  "]");
+				cost = cost.add(methodCallWeight);
 			}
 		}
 		return true;

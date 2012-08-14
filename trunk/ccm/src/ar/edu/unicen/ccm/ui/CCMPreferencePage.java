@@ -54,6 +54,10 @@ public class CCMPreferencePage
 				"Recursive call weight:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
+				PreferenceConstants.P_LIBRARY_CALL_WEIGHT, 
+				"Library call weight:", 
+				getFieldEditorParent()));
+		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_TRY_FACTOR, 
 				"Try-catch factor:", 
 				getFieldEditorParent()));

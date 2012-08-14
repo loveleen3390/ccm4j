@@ -26,6 +26,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		store.setDefault(PreferenceConstants.P_SEQUENCE_WEIGHT, 1);
 		store.setDefault(PreferenceConstants.P_SWITCH_FACTOR, 3);
 		store.setDefault(PreferenceConstants.P_TRY_FACTOR, 3);
+		store.setDefault(PreferenceConstants.P_LIBRARY_CALL_WEIGHT, 0);
 		store.setDefault(PreferenceConstants.P_STRATEGY, AverageWeightStrategy.class.getName());
 	}
 
