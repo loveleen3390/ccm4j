@@ -64,10 +64,17 @@ public class WCCVisitor extends ASTVisitor {
 	
 	@Override
 	public boolean visit(MethodDeclaration node) {
+		IMethodBinding mb = node.resolveBinding();
+		if (mb.getDeclaringClass().isInterface() ||
+				Modifier.isAbstract(node.getModifiers())) {
+			 cost = cost.add(abstractImplementationCost(mb));
+		} else {
 		//Sequence: only 1 for each method, at the top level.
 		cost = cost.add(WeightFactors.sequenceWeight());
 		expr.append(WeightFactors.sequenceWeight() +" ");
+		}
 		return super.visit(node);
+		
 	}
 
 	
@@ -222,16 +229,16 @@ public class WCCVisitor extends ASTVisitor {
 					cost = cost.add(recurWeight);
 				} else {
 					stack.add(targetSignature);
-					if (Modifier.isAbstract(mb.getModifiers())) {
-						expr.append(" +").append(methodCallWeight).append("+");
-						BigInteger abstractCost = abstractImplementationCost(mb);
-						cost = cost.add(abstractCost.add(methodCallWeight));
-					} else {						
+					//if (Modifier.isAbstract(mb.getModifiers())) {
+					//	expr.append(" +").append(methodCallWeight).append("+");
+					//	BigInteger abstractCost = abstractImplementationCost(mb);
+					//	cost = cost.add(abstractCost.add(methodCallWeight));
+					//} else {						
 						BigInteger methodCost = methodCost(targetSignature);
 						expr.append(" +").append(methodCallWeight).
 							append(" + [").append(methodCost).append("]");
 						cost = cost.add(methodCost.add(methodCallWeight));
-					}
+					//}
 					MethodSignature pop = this.stack.pop();
 					if (targetSignature != pop)
 						System.out.println("Error!: ms: " + targetSignature + "  pop:" + pop);
