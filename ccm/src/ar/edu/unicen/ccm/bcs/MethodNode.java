@@ -83,17 +83,10 @@ public class MethodNode {
 	}
 	
 	private BigInteger calculateCost(Stack<MethodSignature> callStack) {
-		IMethodBinding mb = md.resolveBinding();
-		if (mb.getDeclaringClass().isInterface() ||
-				Modifier.isAbstract(md.getModifiers()))
-				return BigInteger.valueOf(1); // NOTE: this will never be called, we handle this case in WCCVisitor
-		else {
-				WCCVisitor visitor = new WCCVisitor(this, this.costModel, map, callStack);
-				this.md.accept(visitor);
-				
-				this.expr = visitor.getExpr();
-				return visitor.getCost();
-		}
+		WCCVisitor visitor = new WCCVisitor(this, this.costModel, map, callStack);
+		this.md.accept(visitor);
+		this.expr = visitor.getExpr();
+		return visitor.getCost();
 	}
 	
 	public String toString() {
