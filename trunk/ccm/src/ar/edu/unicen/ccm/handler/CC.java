@@ -78,13 +78,18 @@ public class CC extends AbstractHandler {
 					monitor.beginTask("Calculating ..", totalWork);
 					int i = 1;
 					CSVWriter csv = new CSVWriter(project.getProject(),"mc.csv", "id", "method", "weight", "weightExpression", "externalCalls");
+					int nMethods = 0;
+					BigInteger totalMethodWeight = BigInteger.ZERO;
 					for(TypeAdapter t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.FQName());
 						for (MethodNode mn:  info.getMethods().values()) {
 							csv.addRow(i++, mn.getSignature(), mn.getCost(), mn.getExpr(), mn.getExternalCalls());
 							monitor.worked(1);
+							nMethods++;
+							totalMethodWeight = totalMethodWeight.add(mn.getCost());
 						}
 					}
+					csv.addRow(i++, "Average MC", totalMethodWeight.divide(BigInteger.valueOf(nMethods)), totalMethodWeight + "/" + nMethods, "-");
 					WriterJob w1 = new WriterJob("Writing mc.csv",csv);
 					w1.schedule();
 					
@@ -94,22 +99,23 @@ public class CC extends AbstractHandler {
 							"id", "className", "superClassName", "numberOfMethods", "ac",  "wcc", "cc");
 					Collection<String> superclasses = new Vector<String>();
 					i = 1;
+					BigInteger totalWCC = BigInteger.ZERO;
 					for(TypeAdapter t : cm.getTypes()) {
 						ClassComplexityInfo info = cm.getClassComplexityInfo(t.FQName());
 						ITypeBinding superClassType = t.getSuperClass();
 						String superclass = (superClassType != null) ? superClassType.getBinaryName() : "java.lang.Object";
 						HierarchyComplexityInfo cost = cm.hierarchyCostOf(info.getName());						
 						csv.addRow(i++,info.getName(), superclass, info.getMethods().size(), info.getAttrComplexity(), info.getWeightedClassComplexity(), cost.getCost());						
+						totalWCC = totalWCC.add(info.getWeightedClassComplexity());
 						if (!superclasses.contains(superclass))
 							superclasses.add(superclass);
 						monitor.worked(1);
 					}
 					for (String iType : superclasses) {
-						
-							
 						csv.addRow(i++, iType, "LEGACY", "10", "10", "1","1");
 						monitor.worked(1);
 					}
+					csv.addRow(i++, "Average WCC", "-", "-", "-", totalWCC.divide(BigInteger.valueOf(cm.getTypes().size())) ,"-");
 					WriterJob w2 = new WriterJob("Writing wcc.csv",csv);
 					w2.schedule();
 					
