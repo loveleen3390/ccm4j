@@ -212,7 +212,7 @@ public class WCCVisitor extends ASTVisitor {
 			return true;
 		} else {
 			/**
-			 * @author mcrasso To account external calls per method
+			 * @author mcrasso To account non-local calls per method
 			 */
 			this.currentMethod.incExternalCalls();
 			/**/

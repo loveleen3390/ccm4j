@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Ccm
-Bundle-SymbolicName: ccm; singleton:=true
+Bundle-SymbolicName: ccm4j;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: ar.edu.unicen.ccm.Activator
 Require-Bundle: org.eclipse.ui,
