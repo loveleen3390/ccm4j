@@ -43,7 +43,7 @@
       <page
             class="ar.edu.unicen.ccm.ui.CCMPreferencePage"
             id="ar.edu.unicen.ccm.ui.CCMPreferencePage"
-            name="CCM Settings">
+            name="CCM4J Settings">
       </page>
    </extension>
    <extension
