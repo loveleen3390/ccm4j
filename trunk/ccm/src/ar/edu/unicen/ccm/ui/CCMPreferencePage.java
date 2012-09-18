@@ -31,11 +31,11 @@ public class CCMPreferencePage
 	
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_SEQUENCE_WEIGHT, 
-				"Sequence weight:", 
+				"Sequence BCS weight:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_CONDITIONAL_FACTOR, 
-				"Weight for calling to a method inside condition:", 
+				"Call to a method m inside condition (C) weigth:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_LOOP_FACTOR, 
@@ -55,15 +55,15 @@ public class CCMPreferencePage
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_LIBRARY_CALL_WEIGHT, 
-				"Library call weight:", 
+				"Call to a method m from an external library (L) weight:", 
 				getFieldEditorParent()));
 		addField(new IntegerFieldEditor(
 				PreferenceConstants.P_TRY_FACTOR, 
-				"Try-[finally] weight:", 
+				"Try-[finally] (Tf) and  catch *[catch] (Cc)  weight:", 
 				getFieldEditorParent()));
 		addField(new RadioGroupFieldEditor(
 				PreferenceConstants.P_STRATEGY, 
-				"Strategy for abstract methods:",
+				"Call to an abstract method A, for which A0,..,An override A (Wax):",
 				4,
 				new String[][] {new String[]{"AVG", AverageWeightStrategy.class.getName()},
 							   new String[]{"MIN", MinWeightStrategy.class.getName()},
